@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}
+    <title>{{ rule_count }} Security Groups</title>
+{% endblock title %}
+
+{% block content %}
+<br><br>
+
+<div class="tablediv">
+<div class="pagetitle">SecurityGroup Report</div>
+<div>Last run: {{ last_run_date }}</div>
+<div>
+<br>
+Toggle: <a class="toggle-vis" data-column="0" style="color: #5da3d9;">RuleId</a> - <a class="toggle-vis" data-column="1" style="color: #5da3d9;">AccountId</a> - <a class="toggle-vis" data-column="6" style="color: #5da3d9;">GroupName</a> - <a class="toggle-vis" data-column="8" style="color: #5da3d9;">PortRange</a> - <a class="toggle-vis" data-column="13" style="color: #5da3d9;">RuleDescription</a>
+</div>
+<table id="sg_table" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>RuleId</th>
+            <th>AccountId</th>
+            <th>Alias</th>
+            <th>Region</th>
+            <th>Type</th>
+            <th>GroupId</th>
+            <th>GroupName</th>
+            <th>Direction</th>
+            <th>PortRange</th>
+            <th>Protocol</th>
+            <th>FromPort</th>
+            <th>ToPort</th>
+            <th>Address</th>
+            <th>RuleDescription</th>
+        </tr>
+    </thead>
+</table>
+</div>
+{{ data|json_script:"data" }}
+<script>
+    const tdata = JSON.parse(document.getElementById('data').textContent);
+</script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/jquery.dataTables.custom.js"></script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/dataTables.searchBuilder.min.js"></script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/dataTables.dateTime.min.js"></script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/buttons.html5.min.js"></script>
+<script>
+$(document).ready(function() {
+    var table = $('#sg_table').DataTable( {
+        dom: 'QlfrtBip',
+        searchBuilder: {
+            logic: 'OR'
+        },
+        buttons: [
+            {
+                extend: 'csv',
+                text: 'CSV',
+                exportOptions: {
+                    modifier: {
+                        search: 'none'
+                    }
+                }
+            }
+        ],
+        "pageLength": 10,
+        "data": tdata,
+        "columnDefs": [
+            {
+                "targets": [ 0, 1, 6, 8, 13 ],
+                "visible": false
+            }
+        ],
+        "columns": [
+            { "data": "rule_id"},
+            { "data": "account_id" },
+            { "data": "account_alias" },
+            { "data": "region" },
+            { "data": "sg_type" },
+            { "data": "group_id" },
+            { "data": "group_name" },
+            { "data": "direction" },
+            { "data": "isrange" },
+            { "data": "ip_protocol" },
+            { "data": "from_port" },
+            { "data": "to_port" },
+            { "data": "address" },
+            { "data": "rule_description" }
+        ],
+        "order": [[1, 'asc']]
+    } );
+
+    $('a.toggle-vis').on( 'click', function (e) {
+        e.preventDefault();
+ 
+        // Get the column API object
+        var column = table.column( $(this).attr('data-column') );
+ 
+        // Toggle the visibility
+        column.visible( ! column.visible() );
+    } );
+} );
+</script>
+{% endblock content %}

@@ -1,0 +1,31 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Project - $PROJECT_NAME-dashboard
+      - echo Logging in to DockerHub...
+      - echo "${DOCKERHUB_PASSWORD}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ORG_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com
+      - REPOSITORY_URI=$REPOSITORY_URL
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t $REPOSITORY_URL .
+      - docker tag $REPOSITORY_URL:latest $REPOSITORY_URL:latest
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker images...
+      - docker push $REPOSITORY_URL:latest
+      - echo Push complete!
+      - echo Writing image definitions file...
+      - echo "[{\"name\":\"${PROJECT_NAME}-container\",\"imageUri\":\"${REPOSITORY_URL}:latest\"}]"
+      - echo "[{\"name\":\"${PROJECT_NAME}-container\",\"imageUri\":\"${REPOSITORY_URL}:latest\"}]" > imagedefinitions.json
+artifacts:
+    files: imagedefinitions.json

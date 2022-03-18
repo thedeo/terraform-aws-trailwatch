@@ -1,0 +1,9 @@
+Django>=3.0,<4.0
+django-admin>=2.0,<3.0
+#django-auth-adfs
+dj-static
+boto3
+botocore
+python-dateutil
+#mysqlclient
+requests

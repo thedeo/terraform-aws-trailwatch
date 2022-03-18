@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% block title %}
+    <title>{{ event_count }} Events</title>
+{% endblock title %}
+
+{% block content %}
+<br><br>
+
+<div class="tablediv">
+<div class="pagetitle">Events</div>
+<div id='time_range'>&nbsp;&nbsp;[ {{ params.start }} -- {{ params.end }} ]</div>
+<div>&nbsp;&nbsp;<button class='time_buttons' onclick="OneHourAgo()">last hour</button>&nbsp;&nbsp;<button class='time_buttons' onclick="OneDayAgo()">last day</button>&nbsp;&nbsp;<button class='time_buttons' onclick="OneWeekAgo()">last week</button></div>
+<br>
+<table id="example" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th></th>
+            <th>EventTime</th>
+            <th>AccountId</th>
+            <th>AccountAlias</th>
+            <th>Region</th>
+            <th>User</th>
+            <th>UserType</th>
+            <th>SourceIp</th>
+            <th>SourceCountry</th>
+            <th>Service</th>
+            <th>EventName</th>
+            <th>ReadOnly</th>
+        </tr>
+    </thead>
+</table>
+</div>
+{{ data|json_script:"data" }}
+<script>
+    const tdata = JSON.parse(document.getElementById('data').textContent);
+</script>
+<script type="text/javascript">
+
+var now = new Date();
+var start_dt = new Date();
+
+now.getDate();
+var end_dt_iso = now.toISOString() //"2018-07-22T05:22:13.000Z" (ISO 8601 format)
+
+
+function OneHourAgo() { 
+    start_dt.setHours( now.getHours() - 1 );
+    var one_hour_ago_iso = start_dt.toISOString()
+    let url = "https://{{ dashboard_domain }}/events/?start="+one_hour_ago_iso+"&end="+end_dt_iso
+    window.open(url, "_self");
+} 
+
+function OneDayAgo() { 
+    start_dt.setDate( now.getDate() - 1 );
+    var one_day_ago_iso = start_dt.toISOString()
+    let url = "https://{{ dashboard_domain }}/events/?start="+one_day_ago_iso+"&end="+end_dt_iso
+    window.open(url, "_self");
+} 
+
+function OneWeekAgo() {
+    start_dt.setDate( now.getDate() - 7 );
+    var one_week_ago_iso = start_dt.toISOString()
+    let url = "https://{{ dashboard_domain }}/events/?start="+one_week_ago_iso+"&end="+end_dt_iso
+    window.open(url, "_self"); 
+} 
+</script> 
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/jquery.dataTables.min.js"></script>
+<script>
+/* Formatting function for row details - modify as you need */
+function format ( d ) {
+    // `d` is the original data object for the row
+
+    return '<table cellpadding="2" cellspacing="0" border="0" style="padding-left:20px;">'+
+        '<tr>'+
+            '<td>Region:</td>'+
+            '<td>'+d.region+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>SourceIp:</td>'+
+            '<td>'+d.source_ip+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>KownIp:</td>'+
+            '<td>'+d.known_ip+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>geoRegion:</td>'+
+            '<td>'+d.geo_regionName+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>geoCity:</td>'+
+            '<td>'+d.geo_city+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>geoISP:</td>'+
+            '<td>'+d.geo_isp+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>UserAgent:</td>'+
+            '<td>'+d.user_agent+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>EventId:</td>'+
+            '<td>'+d.event_id+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>Request Parameters:</td>'+
+            '<td><pre>'+d.request_params+'</pre></td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>Full json:</td>'+
+            '<td><pre>'+d.raw_event+'</pre></td>'+
+        '</tr>'+
+    '</table>';
+}
+
+$(document).ready(function() {
+    var table = $('#example').DataTable( {
+        "data": tdata,
+        "columns": [
+            {
+                "className":      'details-control',
+                "orderable":      false,
+                "data":           null,
+                "defaultContent": ''
+            },
+            { "data": "event_time" },
+            { "data": "account_id" },
+            { "data": "account_alias" },
+            { "data": "region" },
+            { "data": "user" },
+            { "data": "event_type" },
+            { "data": "source_ip" },
+            { "data": "geo_country" },
+            { "data": "source" },
+            { "data": "event_name" },
+            { "data": "read_only" }
+        ],
+        "order": [[1, 'dsc']]
+    } );
+     
+    // Add event listener for opening and closing details
+    $('#example tbody').on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var row = table.row( tr );
+ 
+        if ( row.child.isShown() ) {
+            // This row is already open - close it
+            row.child.hide();
+            tr.removeClass('shown');
+        }
+        else {
+            // Open this row
+            row.child( format(row.data()) ).show();
+            tr.addClass('shown');
+        }
+    } );
+} );
+</script>
+{% endblock content %}

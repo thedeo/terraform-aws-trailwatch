@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}
+    <title>{{ account_count }} AWS Accounts</title>
+{% endblock title %}
+
+{% block content %}
+<br><br>
+<div class="tablediv">
+<div class="pagetitle">AWS Account Report</div>
+<div>Last run: {{ last_run_date }}</div>
+<div>
+<br>
+Toggle: <a class="toggle-vis" data-column="2" style="color: #5da3d9;">BillingName</a> - <a class="toggle-vis" data-column="6" style="color: #5da3d9;">ServicesUsed</a>
+</div>
+<table id="accounts_table" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>AccountId</th>
+            <th>Alias</th>
+            <th>BillingName</th>
+            <th>RootEmail</th>
+            <th>JoinMethod</th>
+            <th>JoinDate</th>
+            <th>ServicesUsed</th>
+        </tr>
+    </thead>
+</table>
+</div>
+{{ data|json_script:"data" }}
+<script>
+    const tdata = JSON.parse(document.getElementById('data').textContent);
+</script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/jquery.dataTables.custom.js"></script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/dataTables.searchBuilder.min.js"></script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/dataTables.dateTime.min.js"></script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/buttons.html5.min.js"></script>
+<script>
+$(document).ready(function() {
+    var table = $('#accounts_table').DataTable( {
+        dom: 'QlfrtBip',
+        searchBuilder: {
+            logic: 'OR'
+        },
+        buttons: [
+            {
+                extend: 'csv',
+                text: 'CSV',
+                exportOptions: {
+                    modifier: {
+                        search: 'none'
+                    }
+                }
+            }
+        ],
+        "pageLength": 100,
+        "data": tdata,
+        "columnDefs": [
+            {
+                "targets": [ 2 ],
+                "visible": false
+            }
+        ],
+        "columns": [
+            { "data": "account_id" },
+            { "data": "account_alias" },
+            { "data": "billing_name" },
+            { "data": "email" },
+            { "data": "joined_method" },
+            { "data": "joined_date" },
+            { "data": "services_used" },
+        ],
+        "order": [[1, 'asc']]
+    } );
+
+    $('a.toggle-vis').on( 'click', function (e) {
+        e.preventDefault();
+ 
+        // Get the column API object
+        var column = table.column( $(this).attr('data-column') );
+ 
+        // Toggle the visibility
+        column.visible( ! column.visible() );
+    } );
+} );
+</script>
+{% endblock content %}

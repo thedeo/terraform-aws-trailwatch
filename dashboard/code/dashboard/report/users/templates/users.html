@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% block title %}
+    <title>{{ user_count }} IAM Users</title>
+{% endblock title %}
+
+{% block content %}
+<br><br>
+
+<div class="tablediv">
+<div class="pagetitle">IAM User Report</div>
+<div>Last run: {{ last_run_date }}</div>
+<div>
+<br>
+Toggle: <a class="toggle-vis" data-column="1" style="color: #5da3d9;">AccountId</a> - <a class="toggle-vis" data-column="2" style="color: #5da3d9;">Account Alias</a> - <a class="toggle-vis" data-column="10" style="color: #5da3d9;">AK1</a> - <a class="toggle-vis" data-column="14" style="color: #5da3d9;">AK2</a>
+</div>
+<table id="users_table" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th></th>
+            <th>AccountId</th>
+            <th>Account Alias</th>
+            <th>Username</th>
+            <th>Console</th>
+            <th>Days Unused</th>
+            <th>Reset Required</th>
+            <th>MFA</th>
+            <th>Admin</th>
+            <th>Full Access</th>
+            <th>AK1</th>
+            <th>AK1 Age Days</th>
+            <th>AK1 Days Unused</th>
+            <th>AK1 Status</th>
+            <th>AK2</th>
+            <th>AK2 Age Days</th>
+            <th>AK2 Days Unused</th>
+            <th>AK2 Status</th>
+        </tr>
+    </thead>
+</table>
+</div>
+{{ data|json_script:"data" }}
+<script>
+    const tdata = JSON.parse(document.getElementById('data').textContent);
+</script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/jquery.dataTables.custom.js"></script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/dataTables.searchBuilder.min.js"></script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/dataTables.dateTime.min.js"></script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="https://{{ static_files_domain }}/static/js/buttons.html5.min.js"></script>
+<script>
+/* Formatting function for row details - modify as you need */
+function format ( d ) {
+    // `d` is the original data object for the row
+
+    return '<table cellpadding="2" cellspacing="0" border="0" style="padding-left:20px;">'+
+        '<tr>'+
+            '<td>ARN:</td>'+
+            '<td>'+d.user_arn+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>Path:</td>'+
+            '<td>'+d.user_path+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>CreateDate:</td>'+
+            '<td>'+d.create_date+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>Password Last Used:</td>'+
+            '<td>'+d.pw_last_used+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>Permission Boundry:</td>'+
+            '<td>'+d.permission_boundry_arn+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>Admin Policies:</td>'+
+            '<td>'+d.user_admin_policies+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>FullAccess Policies:</td>'+
+            '<td>'+d.user_fullaccess_policies+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>AccessKey1Id:</td>'+
+            '<td>'+d.AccessKey1Id+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>AccessKey1CreateDate:</td>'+
+            '<td><pre>'+d.AccessKey1CreateDate+'</pre></td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>AccessKey1LastUsedDate:</td>'+
+            '<td><pre>'+d.AccessKey1LastUsedDate+'</pre></td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>AccessKey1ServiceName:</td>'+
+            '<td><pre>'+d.AccessKey1ServiceName+'</pre></td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>AccessKey1Region:</td>'+
+            '<td><pre>'+d.AccessKey1Region+'</pre></td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>AccessKey2Id:</td>'+
+            '<td>'+d.AccessKey2Id+'</td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>AccessKey2CreateDate:</td>'+
+            '<td><pre>'+d.AccessKey2CreateDate+'</pre></td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>AccessKey2LastUsedDate:</td>'+
+            '<td><pre>'+d.AccessKey2LastUsedDate+'</pre></td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>AccessKey2ServiceName:</td>'+
+            '<td><pre>'+d.AccessKey2ServiceName+'</pre></td>'+
+        '</tr>'+
+        '<tr>'+
+            '<td>AccessKey2Region:</td>'+
+            '<td><pre>'+d.AccessKey2Region+'</pre></td>'+
+        '</tr>'+
+    '</table>';
+}
+
+
+$(document).ready(function() {
+    var table = $('#users_table').DataTable( {
+        dom: 'QlfrtBip',
+        searchBuilder: {
+            logic: 'OR'
+        },
+        buttons: [
+            {
+                extend: 'csv',
+                text: 'CSV',
+                exportOptions: {
+                    modifier: {
+                        search: 'none'
+                    }
+                }
+            }
+        ],
+        "pageLength": 10,
+        "data": tdata,
+        "columnDefs": [
+            {
+                "targets": [ 1 ],
+                "visible": false
+            }
+        ],
+        "columns": [
+            {
+                "className":      'details-control',
+                "orderable":      false,
+                "data":           null,
+                "defaultContent": ''
+            },
+            { "data": "account_id"},
+            { "data": "account_alias" },
+            { "data": "username" },
+            { "data": "login_profile_exists" },
+            { "data": "PasswordLastUsedDays" },
+            { "data": "password_reset_required" },
+            { "data": "mfa_enabled" },
+            { "data": "is_admin" },
+            { "data": "is_fullaccess" },
+            { "data": "AccessKey1" },
+            { "data": "AccessKey1Age" },
+            { "data": "AccessKey1LastUsedDays" },
+            { "data": "AccessKey1Status" },
+            { "data": "AccessKey2" },
+            { "data": "AccessKey2Age" },
+            { "data": "AccessKey2LastUsedDays" },
+            { "data": "AccessKey2Status" }
+        ],
+        "order": [[1, 'asc']]
+    } );
+
+    $('a.toggle-vis').on( 'click', function (e) {
+        e.preventDefault();
+ 
+        // Get the column API object
+        var column = table.column( $(this).attr('data-column') );
+ 
+        // Toggle the visibility
+        column.visible( ! column.visible() );
+    } );
+     
+    // Add event listener for opening and closing details
+    $('#users_table tbody').on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var row = table.row( tr );
+ 
+        if ( row.child.isShown() ) {
+            // This row is already open - close it
+            row.child.hide();
+            tr.removeClass('shown');
+        }
+        else {
+            // Open this row
+            row.child( format(row.data()) ).show();
+            tr.addClass('shown');
+        }
+    } );
+} );
+</script>
+{% endblock content %}

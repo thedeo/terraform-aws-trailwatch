@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}
+	<title>Admin Tools</title>
+{% endblock title %}
+
+{% block content %}
+	<br><br>
+	<div class="tablediv">
+	<div class="pagetitle">Admin Tools</div>
+	<br><br><br>
+
+<div class="tab">
+	<button class="tablinks" onclick="openTab(event, 'AutomationsTab')" id="automations">Automations</button>
+	<button class="tablinks" onclick="openTab(event, 'ReportsTab')" id="reports">Reports</button>
+</div>
+
+<div id="AutomationsTab" class="tabcontent">
+	<h1>Scheduled Automations</h1>
+	<a href="/admin-tools?tab=automations" class="refresh-button">Refresh <i class="fa fa-refresh" aria-hidden="true"></i></a>
+	<table id="automations_table">
+		<tr>
+		<th>Automation</th>
+		<th>Schedule</th>
+		<th>Last Run</th>
+		<th style="width: 25%;">Status</th>
+		</tr>
+		{% for automation in automations %}
+			<tr>
+				<td>{{ automation.friendly_name }}</td>
+				<td>{{ automation.lambda_function_schedule }}</td>
+				<td>{{ automation.last_run_date }}</td>
+				<td style="color: {{ automation.status_color }}; font-weight: bold;">{{ automation.overall_status | safe }}</td>
+			</tr>
+		{% endfor %}
+	</table>
+</div>
+
+<div id="ReportsTab" class="tabcontent">
+	<h1>Scheduled Reports</h1>
+	<a href="/admin-tools?tab=reports" class="refresh-button">Refresh <i class="fa fa-refresh" aria-hidden="true"></i></a>
+	<table id="automations_table">
+		<tr>
+		<th>Report</th>
+		<th>Schedule</th>
+		<th>Last Run</th>
+		<th>Status</th>
+		</tr>
+		{% for reports in reports %}
+			<tr>
+				<td>{{ reports.friendly_name }}</td>
+				<td>{{ reports.lambda_function_schedule }}</td>
+				<td>{{ reports.last_run_date }}</td>
+				<td style="color: {{ reports.status_color }}; font-weight: bold;">{{ reports.overall_status | safe }}</td>
+			</tr>
+		{% endfor %}
+	</table>
+</div>
+
+<script>
+function openTab(evt, tabName) {
+	var i, tabcontent, tablinks;
+	tabcontent = document.getElementsByClassName("tabcontent");
+	for (i = 0; i < tabcontent.length; i++) {
+	tabcontent[i].style.display = "none";
+	}
+	tablinks = document.getElementsByClassName("tablinks");
+	for (i = 0; i < tablinks.length; i++) {
+	tablinks[i].className = tablinks[i].className.replace(" active", "");
+	}
+	document.getElementById(tabName).style.display = "table";
+	evt.currentTarget.className += " active";
+}
+
+// Get the element with id="defaultOpen" and click on it
+document.getElementById("{{requested_tab}}").click();
+</script>
+	</div>
+{% endblock content %}

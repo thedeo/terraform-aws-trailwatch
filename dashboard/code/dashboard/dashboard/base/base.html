@@ -1,0 +1,74 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS and Favicon -->
+    <link rel="stylesheet" type="text/css" href="https://{{ static_files_domain }}/static/css/dashboard.css">
+    <link rel="stylesheet" type="text/css" href="https://{{ static_files_domain }}/static/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://{{ static_files_domain }}/static/css/searchBuilder.dataTables.min.css">
+    <link rel="shortcut icon" href="https://{{ static_files_domain }}/static/favicon.ico" type="image/x-icon">
+
+    <!-- styling that requires variables -->
+    <style>
+      td.details-control {
+          background: url("https://{{ static_files_domain }}/static/images/plus.png") no-repeat center center;
+          cursor: pointer;
+      }
+      tr.shown td.details-control {
+          background: url("https://{{ static_files_domain }}/static/images/minus.png") no-repeat center center;
+      }
+    </style>
+
+    <!-- External -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+   {% block title %}
+   {% endblock title %}
+  </head>
+  <body>
+    <!--Navbar Starts Here-->
+    <ul>
+      <!-- logo created by Becris - Flaticon - https://www.flaticon.com/free-icons/algorithm -->
+      <li><img src="https://{{ static_files_domain }}/static/images/neural_logo.png" alt="logo" width="40" height="40"></li>
+      <li><a href="/">Home</a></li>
+      <!-- <li><a href="/admin-tools">Admin Tools</a></li> -->
+      <li><a href="/events/">Events</a></li>
+<!--       <li class="dropdown">
+        <a href="javascript:void(0)" class="dropbtn">Reports</a>
+        <div class="dropdown-content">
+          <a href="/report/accounts">Accounts</a>
+          <a href="/report/users">Users</a>
+          <a href="/report/security-groups">Security Groups</a>
+          <a href="/report/amis">AMIs</a>
+        </div>
+      </li> -->
+    <!--<li class="dropdown">
+        <a href="javascript:void(0)" class="dropbtn">External Tools</a>
+        <div class="dropdown-content">
+          <a href="#" target="_blank">Kibana Logs</a>
+          <a href="#" target="_blank">CloudHealth</a>
+          <a href="#" target="_blank">SecureState</a>
+          <a href="#" target="_blank">CyberArk</a>
+        </div>
+      </li>
+      <li class="username">Logged in as: {{username}}</li> -->
+    </ul>
+    <!--Navbar Ends-->
+
+    {% block content %}
+    {% endblock content%}
+    <br><br><br>
+
+  <!-- JavaScript -->
+  <script type="text/javascript" src="https://{{ static_files_domain }}/static/js/jquery-3.5.1.js"></script>
+  <script type="text/javascript" src="https://{{ static_files_domain }}/static/js/jquery.dataTables.min.js"></script>
+  <script type="text/javascript" src="https://{{ static_files_domain }}/static/js/jquery.dataTables.custom.js"></script>
+  <script type="text/javascript" src="https://{{ static_files_domain }}/static/js/dataTables.searchBuilder.min.js"></script>
+  <script type="text/javascript" src="https://{{ static_files_domain }}/static/js/dataTables.dateTime.min.js"></script>
+  <script type="text/javascript" src="https://{{ static_files_domain }}/static/js/dataTables.buttons.min.js"></script>
+  <script type="text/javascript" src="https://{{ static_files_domain }}/static/js/buttons.html5.min.js"></script>
+  </body>
+</html>
