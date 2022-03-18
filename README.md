@@ -7,6 +7,10 @@ By default an event summary email will be sent to email addresses of your choice
 
 Code deployments are handled by native CI/CD tools. Terraform will update a zip file in s3. AWS EventBridge will detect this and kick off a pipeline execution.
 
+![1](https://github.com/thedeo/trailwatch/raw/master/images/1.png)
+![2](https://github.com/thedeo/trailwatch/raw/master/images/2.png)
+![3](https://github.com/thedeo/trailwatch/raw/master/images/3.jpg)
+
 ## Prerequisites
 Due to the nature of this solution, there are some manual prerequisites. These are typically things that you will have already done unless you're starting with a fresh AWS account/organization. As of this project's creation there are no APIs avilable to automate these configurations.
 
