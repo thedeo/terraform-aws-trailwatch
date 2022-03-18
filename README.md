@@ -12,7 +12,7 @@ Code deployments are handled by native CI/CD tools. Terraform will update a zip 
 ![3](https://github.com/thedeo/trailwatch/raw/master/images/3.jpg)
 
 ## Prerequisites
-Due to the nature of this solution, there are some manual prerequisites. These are typically things that you will have already done unless you're starting with a fresh AWS account/organization. As of this project's creation there are no APIs avilable to automate these configurations.
+Due to the nature of this solution, there are some manual prerequisites. These are typically things that you will have already done unless you're starting with a fresh AWS account/organization. As of this project's creation there are no APIs avilable to automate *some* of these configurations. Some of these are left manual due to the likelihood you may have already configured them for other projects.
 
 1. **Enable AWS Organizations on your "management account".**
 2. **Enable CloudFormation StackSets service in Organizations.**
