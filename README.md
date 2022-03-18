@@ -14,15 +14,15 @@ Code deployments are handled by native CI/CD tools. Terraform will update a zip 
 ## Prerequisites
 Due to the nature of this solution, there are some manual prerequisites. These are typically things that you will have already done unless you're starting with a fresh AWS account/organization. As of this project's creation there are no APIs avilable to automate these configurations.
 
-1. **Enable AWS Organizations on your "management account".** ( more )
-2. **Enable CloudFormation StackSets service in Organizations.** ( more )
-3. **Enable SCP policy type in Organizations.** ( more )
-4. **Manual modification of AWSCloudFormationStackSetExecutionRole.** ( more )
+1. **Enable AWS Organizations on your "management account".**
+2. **Enable CloudFormation StackSets service in Organizations.**
+3. **Enable SCP policy type in Organizations.**
+4. **Manual modification of AWSCloudFormationStackSetExecutionRole.**
 	If you already have this role in your management account you will need to ensure
 	that it has permissions defined in org_resources/iam_roles.tf
-5. **Create SES identity/domain to be used to send event summary emails.** ( more )
-6. **Create Route53 domain to be used for the dashboard web interface.** ( more )
-7. **Create ACM certificate associated with the Route53 domain.** ( more )
+5. **Create SES identity/domain to be used to send event summary emails.**
+6. **Create Route53 domain to be used for the dashboard web interface.**
+7. **Create ACM certificate associated with the Route53 domain.**
 	Example: `dashboard.example.com`
 
 ## Installation
@@ -36,7 +36,7 @@ Terraform variables are used to name resources and identify existing resources t
 | **trusted_cidrs** 					| This LIST will be used to allow access via Security Group to the dashboard web interface. Make sure to set this to a trusted network.  **Default:** **["0.0.0.0/0"]** |
 | **dashboard_domain** 			| **Hosted Zone ID** for the dashboard. An Alias for `dashboard.example.com` will be created and pointed at the ALB. |
 | **alb_tls_cert_arn** 			| ARN of the manually created ACM certificate that for the dashboard domain. The certificate will need to be for **`dashboard.YOURDOMAIN.com`**.  |
-| **dockerhub_username** 		| Required for the CodeBuild project to sign in. This avoids the DockerHub rate limit. ( more ) |
+| **dockerhub_username** 		| Required for the CodeBuild project to sign in. This avoids the DockerHub rate limit.|
 | **dockerhub_password** 		| See above. |
 | **ses_identity_arn** 			| ARN of the manually created SES identity/domain that will be used to send email alerts. This domain should match the **alert_sender** email domain.  |
 | **email_summary_frequency** 				| Specify the frequency in minutes for how often event summaries will be sent. **Default:** 60 |
