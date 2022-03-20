@@ -16,7 +16,3 @@ resource "aws_route53_record" "webservers" {
     ignore_changes = [fqdn,id,name,records,ttl]
   }
 }
-
-output "domain" {
-  value = join(".", ["dashboard", data.aws_route53_zone.selected.name])
-}

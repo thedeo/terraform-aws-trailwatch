@@ -55,7 +55,3 @@ module "dashboard" {
   dockerhub_password  = var.dockerhub_password
   org_account_id      = module.org_bootstrap.org_account_id
 }
-
-# output "dashboard_domain" {
-#   value = module.dashboard.domain
-# }
