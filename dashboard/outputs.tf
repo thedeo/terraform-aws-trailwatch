@@ -6,7 +6,7 @@ output "dashboard_vpc_id" {
   value = aws_vpc.main.id
 }
 
-output "dashboard_cluster_arn" {
+output "dashboard_ecs_cluster_arn" {
   value = aws_ecs_cluster.main.arn
 }
 
