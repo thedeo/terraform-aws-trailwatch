@@ -10,7 +10,6 @@ output "dashboard_ecs_cluster_arn" {
   value = module.dashboard.dashboard_ecs_cluster_arn
 }
 
-
 output "dashboard_codepipeline_arn" {
   value = module.dashboard.dashboard_codepipeline_arn
 }
