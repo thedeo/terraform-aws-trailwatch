@@ -79,7 +79,7 @@ resource "aws_cloudformation_stack_set" "global_resources" {
   permission_model        = "SERVICE_MANAGED"
 
   lifecycle {
-    ignore_changes = [administration_role_arn]
+    ignore_changes = [administration_role_arn,call_as]
   }
 
   auto_deployment {
@@ -199,7 +199,7 @@ resource "aws_cloudformation_stack_set" "regional_resources" {
   permission_model        = "SERVICE_MANAGED"
   
   lifecycle {
-    ignore_changes = [administration_role_arn]
+    ignore_changes = [administration_role_arn,call_as]
   }
 
   auto_deployment {
