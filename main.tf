@@ -41,17 +41,17 @@ module "org_resources" {
   available_regions        = module.org_bootstrap.available_regions
 }
 
-module "dashboard" {
-  # Set up web dashboard with CodePipeline
-  source = "./dashboard"
-  depends_on = [module.org_resources]
+# module "dashboard" {
+#   # Set up web dashboard with CodePipeline
+#   source = "./dashboard"
+#   depends_on = [module.org_resources]
 
-  project_name        = var.project_name
-  region              = var.region
-  alb_tls_cert_arn    = var.alb_tls_cert_arn
-  trusted_cidrs       = var.trusted_cidrs
-  dashboard_domain    = var.dashboard_domain
-  dockerhub_username  = var.dockerhub_username
-  dockerhub_password  = var.dockerhub_password
-  org_account_id      = module.org_bootstrap.org_account_id
-}
+#   project_name        = var.project_name
+#   region              = var.region
+#   alb_tls_cert_arn    = var.alb_tls_cert_arn
+#   trusted_cidrs       = var.trusted_cidrs
+#   dashboard_domain    = var.dashboard_domain
+#   dockerhub_username  = var.dockerhub_username
+#   dockerhub_password  = var.dockerhub_password
+#   org_account_id      = module.org_bootstrap.org_account_id
+# }
