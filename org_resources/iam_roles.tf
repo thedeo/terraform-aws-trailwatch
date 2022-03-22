@@ -300,10 +300,10 @@ resource "aws_iam_role_policy_attachment" "eventbridge_lambda" {
 }
 
 ##############################
-# Report Lambdas
+# Report Automation Master
 ##############################
-resource "aws_iam_role" "reports_lambda" {
-  name = "${var.project_name}-reports-lambda"
+resource "aws_iam_role" "report_automation_master" {
+  name = "${var.project_name}-report-automation-master"
 
   assume_role_policy = <<EOF
 {
@@ -322,9 +322,9 @@ resource "aws_iam_role" "reports_lambda" {
 EOF
 }
 
-resource "aws_iam_role_policy" "reports_lambda" {
-  name = "${var.project_name}-reports-lambda"
-  role = aws_iam_role.reports_lambda.id
+resource "aws_iam_role_policy" "report_automation_master" {
+  name = "${var.project_name}-report-automation-master"
+  role = aws_iam_role.report_automation_master.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -339,16 +339,59 @@ resource "aws_iam_role_policy" "reports_lambda" {
         ]
         Effect   = "Allow"
         Resource = [
-                "arn:aws:dynamodb:us-east-1:${var.org_account_id}:table/${var.project_name}-reports"
+                "arn:aws:dynamodb:us-east-1:${var.org_account_id}:table/${var.project_name}-report-*"
             ]
       },
     ]
   })
 }
 
-resource "aws_iam_role_policy_attachment" "reports_lambda_AWSLambdaBasicExecutionRole" {
-  role       = aws_iam_role.reports_lambda.name
+resource "aws_iam_role_policy_attachment" "report_automation_master_AWSLambdaBasicExecutionRole" {
+  role       = aws_iam_role.report_automation_master.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+##############################
+# Report Automation
+##############################
+resource "aws_iam_role" "report_automation" {
+  name = "${var.project_name}-report-automation"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "AWS": "${aws_iam_role.report_automation_master.arn}"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "report_automation" {
+  name = "${var.project_name}-report-automation"
+  role = aws_iam_role.report_automation.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "iam:ListUsers",
+          "iam:GetLoginProfile",
+          "ce:GetCostAndUsage"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+    ]
+  })
 }
 
 
@@ -377,7 +420,7 @@ EOF
 
 resource "aws_iam_role_policy" "report_states" {
   name = "${var.project_name}-report-states"
-  role = aws_iam_role.reports_states.id
+  role = aws_iam_role.report_states.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -388,14 +431,21 @@ resource "aws_iam_role_policy" "report_states" {
         ]
         Effect   = "Allow"
         Resource = [
-        aws_lambda_function.reports.arn
+        "${aws_lambda_function.reports.arn}:$LATEST"
         ]
+      },
+      {
+        Action = [
+          "organizations:ListAccounts"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
       }
     ]
   })
 }
 
-resource "aws_iam_role_policy_attachment" "reports_state_AWSLambdaBasicExecutionRole" {
+resource "aws_iam_role_policy_attachment" "report_state_AWSLambdaBasicExecutionRole" {
   role       = aws_iam_role.report_states.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }

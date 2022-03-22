@@ -26,32 +26,20 @@ resource "aws_dynamodb_table" "events" {
 
 
 locals {
-  report_types = [
-    {
-     report_type = "account"
-     sort_key = "account_alias"
-    },
-    {
-     report_type = "user"
-     sort_key = "user_arn"
-    },
-    {
-     report_type = "ami"
-     sort_key = "instance_id"
-    },
-    {
-     report_type = "securitygroup"
-     sort_key = "rule_id"
-    }
-  ]
+  report_sort_keys = {
+    account       = "account_alias"
+    user          = "user_arn"
+    ami           = "instance_id"
+    securitygroup = "rule_id"
+  }
 }
 
 resource "aws_dynamodb_table" "reports" {
-  for_each       = local.report_types
+  for_each       = local.report_sort_keys
 
-  name           = "${var.project_name}-${each.value.report_type}"
+  name           = "${var.project_name}-${each.key}"
   hash_key       = "account_id"
-  range_key      = each.sort_key
+  range_key      = each.value
   billing_mode   = "PAY_PER_REQUEST"
 
   attribute {
@@ -60,7 +48,7 @@ resource "aws_dynamodb_table" "reports" {
   }
 
   attribute {
-    name = each.value.sort_key
+    name = each.value
     type = "S"
   }
 

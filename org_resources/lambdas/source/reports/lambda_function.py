@@ -7,34 +7,34 @@ logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
 
-	report = event.get('report', '')
+	report_type = event.get('report_type', '')
 
 	# Default exit.
-	if not report:
-		print('No report type specified. Exiting.')
+	if not report_type:
+		print('No report_type type specified. Exiting.')
 
 
 	# Account
-	elif report == 'account':
-		print(f'Starting {report} logic ...')
+	elif report_type == 'account':
+		print(f'Starting {report_type} logic ...')
 		import account
 		account.start(event)
 
 	# User
-	elif report == 'user':
-		print(f'Starting {report} logic ...')
+	elif report_type == 'user':
+		print(f'Starting {report_type} logic ...')
 		import user
 		user.start(event)
 
 	# AMI
-	elif report == 'ami':
-		print(f'Starting {report} logic ...')
+	elif report_type == 'ami':
+		print(f'Starting {report_type} logic ...')
 		import ami
 		ami.start(event)
 
 	# Security Group
-	elif report == 'securitygroup':
-		print(f'Starting {report} logic ...')
+	elif report_type == 'securitygroup':
+		print(f'Starting {report_type} logic ...')
 		import securitygroup
 		securitygroup.start(event)
 
