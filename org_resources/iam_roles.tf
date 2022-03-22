@@ -298,3 +298,104 @@ resource "aws_iam_role_policy_attachment" "eventbridge_lambda" {
   policy_arn = aws_iam_policy.eventbridge_lambda.arn
   role = aws_iam_role.eventbridge_lambda.name
 }
+
+##############################
+# Report Lambdas
+##############################
+resource "aws_iam_role" "reports_lambda" {
+  name = "${var.project_name}-reports-lambda"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "reports_lambda" {
+  name = "${var.project_name}-reports-lambda"
+  role = aws_iam_role.reports_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "dynamodb:Scan",
+          "dynamodb:PutItem",
+          "dynamodb:GetItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:BatchWriteItem"
+        ]
+        Effect   = "Allow"
+        Resource = [
+                "arn:aws:dynamodb:us-east-1:${var.org_account_id}:table/${var.project_name}-reports"
+            ]
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "reports_lambda_AWSLambdaBasicExecutionRole" {
+  role       = aws_iam_role.reports_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+
+################################
+# Report States (Step Functions)
+################################
+resource "aws_iam_role" "report_states" {
+  name = "${var.project_name}-report-states"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "states.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "report_states" {
+  name = "${var.project_name}-report-states"
+  role = aws_iam_role.reports_states.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "lambda:InvokeFunction"
+        ]
+        Effect   = "Allow"
+        Resource = [
+        aws_lambda_function.reports.arn
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "reports_state_AWSLambdaBasicExecutionRole" {
+  role       = aws_iam_role.report_states.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
