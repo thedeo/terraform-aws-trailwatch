@@ -1,12 +1,25 @@
 # TrailWatch - AWS Organization Monitor
-TrailWatch is an open source monitoring solution for AWS Organizations. Deployment with Terraform makes it easy for anyone to implement and tear down. 
 
-The dashboard web interface uses Django along with the DataTables library to provide a rich user experience.
+### What is TrailWatch?
+TrailWatch is an open source monitoring solution for AWS Organizations. Deployment with Terraform makes it easy for anyone to implement and tear down.
 
-By default an event summary email will be sent to email addresses of your choice. The email doesn't include specifics but instead just enough for you to understand what is happening in your AWS accounts. This helps engineers get visibility without being spammed with too much detail. If you need to dig further into an event, a link to the dashboard will take you just to the set of events from that time period.
+The dashboard web interface uses Django along with the DataTables library to produce dynamic data views.
+
+By default an hourly event summary email will be sent to email addresses of your choice. The email doesn't include specifics but instead just enough for you to understand what is happening in your AWS accounts. This helps engineers get visibility without being spammed with too much detail. If you need to dig further into an event, a link to the dashboard will take you just to the set of events from that time period.
 
 Code deployments are handled by native CI/CD tools. Terraform will update a zip file in s3. AWS EventBridge will detect this and kick off a pipeline execution.
 
+### What does it solve?
+TrailWatch is all about visibility into your entire organization at the control plane. The idea is to provide clean, customizable alerts and dashboards for easy consumption of control plane events across your entire AWS Organization.
+
+### Who is it for?
+TrailWatch is designed to scale with your organization which makes it a great low cost choice for small to medium sized environments. You can deploy in a larger environment but just be aware it has not been fully tested in large environments.
+
+### How much will it cost?
+The cost drivers are going to be the ECS containers, ALB and Lambda invocations. You shouldn't expect the cost to be more than about $25/month. This may vary depending on the size of your environment. But as always be sure to track your spend.
+
+
+## Screenshots
 ![1](https://github.com/thedeo/trailwatch/raw/master/images/1.png)
 ![2](https://github.com/thedeo/trailwatch/raw/master/images/2.png)
 ![3](https://github.com/thedeo/trailwatch/raw/master/images/3.png)
