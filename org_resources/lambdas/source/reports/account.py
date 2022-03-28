@@ -9,7 +9,6 @@ from time import sleep
 from botocore.exceptions import ClientError
 
 from common import create_client
-from common import get_account_alias
 from common import get_available_regions
 from common import retry
 from common import clean_account_name
@@ -22,14 +21,6 @@ logger.setLevel(logging.INFO)
 ################################################################################################
 from common import project_name
 from common import org_account_id
-from common import member_role_name
-from common import session_name
-
-# Metadata
-lambda_function_schedule = os.environ['SCHEDULE']
-lambda_function_name = os.environ['AWS_LAMBDA_FUNCTION_NAME']
-report_name = os.environ['REPORT_NAME']
-friendly_name = os.environ['FRIENDLY_NAME']
 
 # Clients
 dynamodb = boto3.client('dynamodb', region_name='us-east-1')
@@ -245,10 +236,10 @@ def analyze_data(account_id, account_alias, event, services_used):
 	item = {}
 	item.setdefault('account_id', {})['S'] = account_id
 	item.setdefault('account_alias', {})['S'] = account_alias
-	item.setdefault('billing_name', {})['S'] = event['Name']
-	item.setdefault('email', {})['S'] = event['Email']
-	item.setdefault('joined_method', {})['S'] = event['joined_method']
-	item.setdefault('joined_date', {})['S'] = event['joined_date']
+	item.setdefault('billing_name', {})['S'] = event['payload']['Name']
+	item.setdefault('email', {})['S'] = event['payload']['Email']
+	item.setdefault('joined_method', {})['S'] = event['payload']['JoinedMethod']
+	item.setdefault('joined_date', {})['S'] = event['payload']['JoinedTimestamp']
 	item.setdefault('services_used', {})['S'] = services_used if services_used else '-' # if services_used is empty set to '-'
 	processed_data_list.append({"PutRequest": {"Item": item}})
 
@@ -278,7 +269,7 @@ def send_to_dynamodb(account_id, account_alias, processed_data_list, report_tabl
 			retry_count = 0
 			while True:
 				try:
-					dynamodb.batch_write_item(RequestItems={f"{report_table}": request_items_batch})
+					dynamodb.batch_write_item(RequestItems={report_table: request_items_batch})
 					print(f'Put {count} items into dynamodb successfully!')
 					break
 				except Exception as e:
@@ -296,7 +287,7 @@ def send_to_dynamodb(account_id, account_alias, processed_data_list, report_tabl
 			retry_count = 0
 			while True:
 				try:
-					dynamodb.batch_write_item(RequestItems={f"{report_table}": request_items_batch})
+					dynamodb.batch_write_item(RequestItems={report_table: request_items_batch})
 					print(f'Put {count} items into dynamodb successfully!')
 					break
 				except Exception as e:
@@ -431,8 +422,7 @@ def send_to_dynamodb(account_id, account_alias, processed_data_list, report_tabl
 # Start the Script
 ################################################################################################
 def start(event):
-	report_type = event.get('report', '')
-	print(event)
+	report_type = event.get('report_type', '')
 
 	if not report_type == 'account':
 		print('Event  does not match report type "account".')
@@ -443,8 +433,8 @@ def start(event):
 	# GATHER 
 	##############
 	# Routine account_id/account_alias discovery
-	account_id 	  = event['Id']
-	account_name  = event['Name']
+	account_id 	  = event['payload']['Id']
+	account_name  = event['payload']['Name']
 	account_alias = clean_account_name(account_name)
 	services_used = get_service_usage(account_id, account_alias)
 

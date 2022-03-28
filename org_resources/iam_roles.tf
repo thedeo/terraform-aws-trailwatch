@@ -339,8 +339,17 @@ resource "aws_iam_role_policy" "report_automation_master" {
         ]
         Effect   = "Allow"
         Resource = [
-                "arn:aws:dynamodb:us-east-1:${var.org_account_id}:table/${var.project_name}-report-*"
-            ]
+            "arn:aws:dynamodb:us-east-1:${var.org_account_id}:table/${var.project_name}-report-*"
+        ]
+      },
+      {
+        Action = [
+          "sts:AssumeRole"
+        ]
+        Effect   = "Allow"
+        Resource = [
+            "arn:aws:iam::*:role/${var.project_name}-report-automation"
+        ]
       },
     ]
   })

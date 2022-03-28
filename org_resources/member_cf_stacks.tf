@@ -108,7 +108,8 @@ resource "aws_cloudformation_stack_set" "iam_roles" {
               "Effect": "Allow",
               "Action": [
                 "iam:ListUsers",
-                "iam:GetLoginProfile"
+                "iam:GetLoginProfile",
+                "ce:GetCostAndUsage"
               ],
               "Resource": [
                 "*"

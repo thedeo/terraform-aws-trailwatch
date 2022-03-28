@@ -34,6 +34,11 @@ resource "aws_sfn_state_machine" "report_account" {
   name     = "${var.project_name}-report-account"
   role_arn = aws_iam_role.report_states.arn
 
+  tags = {
+    friendly_name = "Account Report"
+    description = "Simple report showing all AWS accounts in an Organization along with the services they are utilizing according to billing."
+  }
+
   definition = <<EOF
 {
   "Comment": "A description of my state machine",
@@ -43,14 +48,14 @@ resource "aws_sfn_state_machine" "report_account" {
       "Type": "Task",
       "Parameters": {},
       "Resource": "arn:aws:states:::aws-sdk:organizations:listAccounts",
-      "Next": "Map"
+      "Next": "Iterate Accounts"
     },
-    "Map": {
+    "Iterate Accounts": {
       "Type": "Map",
       "Iterator": {
-        "StartAt": "Pass",
+        "StartAt": "Inject Report Type",
         "States": {
-          "Pass": {
+          "Inject Report Type": {
             "Type": "Pass",
             "Next": "Lambda Invoke",
             "Parameters": {

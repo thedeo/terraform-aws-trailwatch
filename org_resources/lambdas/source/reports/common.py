@@ -17,7 +17,7 @@ project_name	 	= os.environ['project_name']
 region			 	= os.environ['region']
 org_account_id		= os.environ['org_account_id']
 member_role_name 	= os.environ['member_role_name']
-session_name 		= f'{project_name}-reports'
+session_name 		= f'{project_name}-report'
 
 
 ################################################################################################
@@ -35,7 +35,7 @@ def create_client(accountid, region, service):
 		try:
 			sts_connection = boto3.client('sts')
 			external_account = sts_connection.assume_role(
-				RoleArn=f"arn:aws:iam::{accountid}:role/{role}",
+				RoleArn=f"arn:aws:iam::{accountid}:role/{member_role_name}",
 				RoleSessionName=session_name
 			)
 			

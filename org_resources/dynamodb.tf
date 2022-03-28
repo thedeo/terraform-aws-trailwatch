@@ -37,7 +37,7 @@ locals {
 resource "aws_dynamodb_table" "reports" {
   for_each       = local.report_sort_keys
 
-  name           = "${var.project_name}-${each.key}"
+  name           = "${var.project_name}-report-${each.key}"
   hash_key       = "account_id"
   range_key      = each.value
   billing_mode   = "PAY_PER_REQUEST"
