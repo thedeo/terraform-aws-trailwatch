@@ -124,6 +124,8 @@ resource "aws_cloudformation_stack_set" "iam_roles" {
                 "ec2:DescribeRegions",
                 "ec2:DescribeInstances",
                 "ec2:DescribeImages",
+                "ec2:DescribeSecurityGroups",
+                "rds:DescribeDBSecurityGroups",
                 "ce:GetCostAndUsage"
               ],
               "Resource": [

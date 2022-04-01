@@ -302,3 +302,140 @@ resource "aws_sfn_state_machine" "report_ami" {
 }
 EOF
 }
+
+
+resource "aws_sfn_state_machine" "report_securitygroup" {
+  name     = "${var.project_name}-report-securitygroup"
+  role_arn = aws_iam_role.report_states.arn
+
+  tags = {
+    friendly_name = "Security Group Report"
+    description = "Report of all Security Group rules across the entire AWS Org."
+  }
+
+  definition = <<EOF
+{
+  "Comment": "Security Group Report State Machine",
+  "StartAt": "ListAccounts",
+  "States": {
+    "ListAccounts": {
+      "Type": "Task",
+      "Parameters": {},
+      "Resource": "arn:aws:states:::aws-sdk:organizations:listAccounts",
+      "Next": "Iterate Accounts"
+    },
+    "Iterate Accounts": {
+      "Type": "Map",
+      "Iterator": {
+        "StartAt": "Inject Report Type",
+        "States": {
+          "Inject Report Type": {
+            "Type": "Pass",
+            "Next": "Get EC2 Region List",
+            "Parameters": {
+              "payload.$": "$",
+              "report_type": "securitygroup",
+              "mode": "a"
+            }
+          },
+          "Get EC2 Region List": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {
+              "Payload.$": "$",
+              "FunctionName": "${aws_lambda_function.reports.arn}:$LATEST"
+            },
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "Lambda.ServiceException",
+                  "Lambda.AWSLambdaException",
+                  "Lambda.SdkClientException"
+                ],
+                "IntervalSeconds": 2,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Next": "Distribute Region List Among Lambdas"
+          },
+          "Distribute Region List Among Lambdas": {
+            "Type": "Map",
+            "End": true,
+            "Iterator": {
+              "StartAt": "Get security group data per region",
+              "States": {
+                "Get security group data per region": {
+                  "Type": "Task",
+                  "Resource": "arn:aws:states:::lambda:invoke",
+                  "Parameters": {
+                    "FunctionName": "${aws_lambda_function.reports.arn}:$LATEST",
+                    "Payload.$": "$"
+                  },
+                  "Retry": [
+                    {
+                      "ErrorEquals": [
+                        "Lambda.ServiceException",
+                        "Lambda.AWSLambdaException",
+                        "Lambda.SdkClientException"
+                      ],
+                      "IntervalSeconds": 2,
+                      "MaxAttempts": 3,
+                      "BackoffRate": 2
+                    }
+                  ],
+                  "Next": "Distribute Security Groups Among Lambdas"
+                },
+                "Distribute Security Groups Among Lambdas": {
+                  "Type": "Map",
+                  "End": true,
+                  "Iterator": {
+                    "StartAt": "Analyze security group data",
+                    "States": {
+                      "Analyze security group data": {
+                        "Type": "Task",
+                        "Resource": "arn:aws:states:::lambda:invoke",
+                        "OutputPath": "$.Payload",
+                        "Parameters": {
+                          "Payload.$": "$",
+                          "FunctionName": "${aws_lambda_function.reports.arn}:$LATEST"
+                        },
+                        "Retry": [
+                          {
+                            "ErrorEquals": [
+                              "Lambda.ServiceException",
+                              "Lambda.AWSLambdaException",
+                              "Lambda.SdkClientException"
+                            ],
+                            "IntervalSeconds": 2,
+                            "MaxAttempts": 6,
+                            "BackoffRate": 2
+                          }
+                        ],
+                        "End": true
+                      }
+                    }
+                  },
+                  "ItemsPath": "$.Payload.group_lists"
+                }
+              }
+            },
+            "ItemsPath": "$.Payload.region_list",
+            "Parameters": {
+              "account_id.$": "$.Payload.account_id",
+              "account_name.$": "$.Payload.account_name",
+              "account_alias.$": "$.Payload.account_alias",
+              "report_type.$": "$.Payload.report_type",
+              "mode.$": "$.Payload.mode",
+              "region.$": "$$.Map.Item.Value"
+            }
+          }
+        }
+      },
+      "InputPath": "$.Accounts",
+      "End": true
+    }
+  }
+}
+EOF
+}

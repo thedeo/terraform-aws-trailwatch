@@ -137,7 +137,9 @@ def analyze_data(account_id, account_alias, region, ami_details, instance_id_and
 	return processed_data_list
 
 
-def send_to_dynamodb(account_id, account_alias, processed_data_list, report_table, dynamodb):
+def send_to_dynamodb(account_id, account_alias, processed_data_list, report_table):
+	dynamodb = boto3.client('dynamodb', region_name='us-east-1')
+
 	request_items_batch = []
 	count = 0
 	retry_limit = 3
@@ -195,7 +197,7 @@ def start(event):
 		exit(1)
 
 	if mode == 'a':
-		# Mode A will collect a list of users, divide them into 50 user chunks for processing.
+		# Mode a will collect a list of users, divide them into 50 user chunks for processing.
 		account_id 	  = event['payload']['Id']
 		account_name  = event['payload']['Name']
 		account_alias = clean_account_name(account_name)
@@ -214,8 +216,7 @@ def start(event):
 		}
 
 	if mode == 'b':
-		# Mode B collect detailed instance image data and perform analysis on it. The result is stored in DynamoDB.
-		dynamodb = boto3.client('dynamodb', region_name='us-east-1')
+		# Mode b collects detailed instance image data and perform analysis on it. The result is stored in DynamoDB.
 		report_table = f'{project_name}-report-{report_type}'
 		account_id = event['account_id']
 		account_alias = event['account_alias']
@@ -232,6 +233,6 @@ def start(event):
 			processed_data_list = analyze_data(account_id, account_alias, region, ami_details, instance_id_and_ami_id_list)
 
 			print(f'Sending data for {account_alias}({account_id}) to DynamoDB...')
-			send_to_dynamodb(account_id, account_alias, processed_data_list, report_table, dynamodb)
+			send_to_dynamodb(account_id, account_alias, processed_data_list, report_table)
 		else:
 			print(f'No instances found for {account_alias}({account_id}) - {region}')

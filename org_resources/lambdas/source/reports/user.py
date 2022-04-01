@@ -967,7 +967,7 @@ def start(event):
 		exit(1)
 
 	if mode == 'a':
-		# Mode A will collect a list of users, divide them into 50 user chunks for processing.
+		# Mode a collects a list of users, divide them into 50 user chunks for processing.
 		account_id 	  = event['payload']['Id']
 		account_name  = event['payload']['Name']
 		account_alias = clean_account_name(account_name)
@@ -989,7 +989,7 @@ def start(event):
 		}
 
 	if mode == 'b':
-		# Mode B collect detailed user data and perform analysis on it. The result is stored in DynamoDB.
+		# Mode b collects detailed user data and perform analysis on it. The result is stored in DynamoDB.
 		dynamodb = boto3.client('dynamodb', region_name='us-east-1')
 		report_table = f'{project_name}-report-{report_type}'
 		account_id = event['account_id']

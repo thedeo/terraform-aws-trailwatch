@@ -409,6 +409,8 @@ resource "aws_iam_role_policy" "report_automation" {
           "ec2:DescribeRegions",
           "ec2:DescribeInstances",
           "ec2:DescribeImages",
+          "ec2:DescribeSecurityGroups",
+          "rds:DescribeDBSecurityGroups",
           "ce:GetCostAndUsage"
         ]
         Effect   = "Allow"
