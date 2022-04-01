@@ -34,30 +34,46 @@ locals {
   }
 }
 
-resource "aws_dynamodb_table" "reports" {
-  for_each       = local.report_sort_keys
+resource "aws_dynamodb_table" "active_reports" {
 
-  name           = "${var.project_name}-report-${each.key}"
-  hash_key       = "account_id"
-  range_key      = each.value
+  name           = "${var.project_name}-report-active-tables"
+  hash_key       = "report_type"
   billing_mode   = "PAY_PER_REQUEST"
 
   attribute {
-    name = "account_id"
+    name = "report_type"
     type = "S"
-  }
-
-  attribute {
-    name = each.value
-    type = "S"
-  }
-
-  ttl {
-    attribute_name = "ttl"
-    enabled        = true
   }
 
   lifecycle {
     prevent_destroy = true
   }
 }
+
+# resource "aws_dynamodb_table" "reports" {
+#   for_each       = local.report_sort_keys
+
+#   name           = "${var.project_name}-report-${each.key}"
+#   hash_key       = "account_id"
+#   range_key      = each.value
+#   billing_mode   = "PAY_PER_REQUEST"
+
+#   attribute {
+#     name = "account_id"
+#     type = "S"
+#   }
+
+#   attribute {
+#     name = each.value
+#     type = "S"
+#   }
+
+#   ttl {
+#     attribute_name = "ttl"
+#     enabled        = true
+#   }
+
+#   lifecycle {
+#     prevent_destroy = true
+#   }
+# }

@@ -100,6 +100,108 @@ def get_available_regions(account_id):
 
 	return account_regions
 
+################################################################################################
+# DynamoDB - Manage Report Tables
+################################################################################################
+def manage_report_table(project_name, report_type, table_hash, table_range):
+	#########################################################
+	# Create DynamoDB table
+	#########################################################
+	timestamp = datetime.datetime.utcnow().strftime('%m%d%Y-%H%M%S%f')[:-4]
+	retry_count = 0
+	while True:
+		try:
+			print(f'Creating table...')
+			response = dynamodb.create_table(
+				TableName=f'{project_name}-report-{report_type}-{timestamp}',
+				KeySchema=[
+					{
+						'AttributeName': table_hash,
+						'KeyType': 'HASH'  # Partition key
+					},
+					{
+						'AttributeName': table_range,
+						'KeyType': 'RANGE'  # Sort key
+					},
+				],
+				AttributeDefinitions=[
+					{
+						'AttributeName': table_hash,
+						'AttributeType': 'S'
+					},
+					{
+						'AttributeName': table_range,
+						'AttributeType': 'S'
+					}
+				],
+				BillingMode='PAY_PER_REQUEST'
+			)
+			waiter = dynamodb.get_waiter('table_exists')
+			waiter.wait(TableName=report_table) # wait for table TO exist
+			print(f'>>> Table created.')
+			break
+		except Exception as e:
+			retry_count = retry(e, f'Create DynamoDB table {report_table}', retry_count, retry_limit)
+
+	#########################################################
+	# Update active table
+	#########################################################
+	while True:
+		try:
+			session = boto3.Session(region_name='us-east-1')
+			resource = session.resource('dynamodb')
+			table = resource.Table(f'{project_name}-report-active-tables')
+			print('>>> Created DynamoDB table object.')
+			break
+		except Exception as e:
+			retry_count = retry(e, f'Create DynamoDB table object.',
+								retry_count, retry_limit)
+
+
+	##################################################################################################################### START HERE
+
+
+	while True:
+		# Only check for 'RUNNING' status if trying to set the status to 'DONE'
+		try:
+			if status == 'DONE': # target status
+				get_response = table.get_item(Key={'invocation_name': invocation_name})
+				if get_response.get('Item', {}).get('status', '') != 'RUNNING':
+					print(f'>>> Waiting for {invocation_name} to be in \'RUNNING\' status.')
+					sleep(5)
+					retry_count += 1
+					if retry_count > retry_limit:
+						print(f'Retry limit of {retry_limit} reached. Exiting.')
+						exit(1)
+				else:
+					print('>>> \'RUNNING\' status found.')
+					break
+			else:
+				break
+		except Exception as e:
+			retry_count = retry(e, f'Create DynamoDB table object.',
+								retry_count, retry_limit)
+
+	while True:
+		try:
+			# Update status
+			update_response = table.update_item(
+				Key={
+					'invocation_name': invocation_name,
+				},
+				UpdateExpression='SET #attribute1 = :value1',
+				ExpressionAttributeNames={
+					'#attribute1': 'status'
+				},
+				ExpressionAttributeValues={
+					':value1': status
+				}
+			)
+			break 
+		except Exception as e:
+			retry_count = retry(e, f'Verify status marked as {status} in DynamoDB!',
+								retry_count, retry_limit)
+
 
 ################################################################################################
 # Make account name consistent
