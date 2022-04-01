@@ -306,18 +306,10 @@ def start(event):
 		print(event)
 		exit(1)
 
-	##############
-	# GATHER 
-	##############
-	# Routine account_id/account_alias discovery
 	account_id 	  = event['payload']['Id']
 	account_name  = event['payload']['Name']
 	account_alias = clean_account_name(account_name)
 	services_used = get_service_usage(account_id, account_alias)
-
-	###############
-	# PROCESS
-	###############
 	report_table = f'{project_name}-report-{report_type}'
 
 	print(f'Analizing data for {account_id}({account_alias})...')
@@ -325,8 +317,3 @@ def start(event):
 
 	print(f'Sending data for {account_alias}({account_id}) to DynamoDB...')
 	send_to_dynamodb(account_id, account_alias, processed_data_list, report_table)
-
-	###############
-	# FINISH
-	###############
-	print('Done!')

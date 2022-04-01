@@ -37,14 +37,14 @@ def datetime_handler(x):
 ################################################################################################
 # Create cross account credentials
 ################################################################################################
-def create_client(accountid, region, service):
+def create_client(account_id, region, service):
 	retry_limit = 1
 	retries = 0
 	while True:
 		try:
 			sts_connection = boto3.client('sts')
 			external_account = sts_connection.assume_role(
-				RoleArn=f"arn:aws:iam::{accountid}:role/{member_role_name}",
+				RoleArn=f"arn:aws:iam::{account_id}:role/{member_role_name}",
 				RoleSessionName=session_name
 			)
 			
@@ -62,7 +62,7 @@ def create_client(accountid, region, service):
 			)
 			break
 		except Exception as e:
-			print(f'Error creating {service} client  -- {accountid}')
+			print(f'Error creating {service} client  -- {account_id}')
 			print(e)
 			retries += 1
 			if retries >= retry_limit:
@@ -75,12 +75,12 @@ def create_client(accountid, region, service):
 ################################################################################################
 # Get available regions for account
 ################################################################################################
-def get_available_regions(accountid):
+def get_available_regions(account_id):
 	# Retrieve all of the available regions in an account.
 
 	account_regions = []
 	try:
-		ec2 = create_client(accountid, 'us-east-1', 'ec2')
+		ec2 = create_client(account_id, 'us-east-1', 'ec2')
 
 		params = {}
 		params["AllRegions"] = False
@@ -92,7 +92,7 @@ def get_available_regions(accountid):
 
 	# Test to see if regions found are actually enabled.
 	for region in all_regions:
-		sts = create_client(accountid, region, 'sts')
+		sts = create_client(account_id, region, 'sts')
 		try:
 			sts.get_caller_identity()
 			account_regions.append(region)

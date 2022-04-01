@@ -991,7 +991,7 @@ def start(event):
 		}
 
 	if mode == 'b':
-		# Mode B collect detailed user data and perform analysis on it. The result is stored in DynamoDB
+		# Mode B collect detailed user data and perform analysis on it. The result is stored in DynamoDB.
 		dynamodb = boto3.client('dynamodb', region_name='us-east-1')
 		report_table = f'{project_name}-report-{report_type}'
 		account_id = event['account_id']
@@ -1007,7 +1007,3 @@ def start(event):
 
 		print(f'Sending data for {num_users} users in {account_alias}({account_id}) to DynamoDB...')
 		send_to_dynamodb(account_id, account_alias, processed_user_data_list, report_table, dynamodb)
-
-
-		
-

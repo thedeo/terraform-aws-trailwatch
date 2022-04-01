@@ -121,6 +121,9 @@ resource "aws_cloudformation_stack_set" "iam_roles" {
                 "iam:GetAccessKeyLastUsed",
                 "iam:GetLoginProfile",
                 "iam:ListMFADevices",
+                "ec2:DescribeRegions",
+                "ec2:DescribeInstances",
+                "ec2:DescribeImages",
                 "ce:GetCostAndUsage"
               ],
               "Resource": [
