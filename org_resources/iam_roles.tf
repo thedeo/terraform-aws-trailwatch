@@ -393,7 +393,19 @@ resource "aws_iam_role_policy" "report_automation" {
       {
         Action = [
           "iam:ListUsers",
+          "iam:ListUserPolicies",
+          "iam:ListAttachedUserPolicies",
+          "iam:GetUserPolicy",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion",
+          "iam:ListGroupsForUser",
+          "iam:ListGroupPolicies",
+          "iam:ListAttachedGroupPolicies",
+          "iam:GetGroupPolicy",
+          "iam:ListAccessKeys",
+          "iam:GetAccessKeyLastUsed",
           "iam:GetLoginProfile",
+          "iam:ListMFADevices",
           "ce:GetCostAndUsage"
         ]
         Effect   = "Allow"

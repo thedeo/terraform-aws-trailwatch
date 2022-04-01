@@ -4,6 +4,7 @@ import re
 import json
 import logging
 import urllib3
+import datetime
 
 from time import sleep
 
@@ -24,6 +25,14 @@ session_name 		= f'{project_name}-report'
 # Regex
 ################################################################################################
 is_account_id = re.compile('^[0-9]{12}$')
+
+################################################################################################
+# This function will make the datetime object serializable for json.dumps
+################################################################################################
+def datetime_handler(x):
+    if isinstance(x, datetime.datetime):
+        return x.isoformat()
+    raise TypeError("Unknown type")
 
 ################################################################################################
 # Create cross account credentials
@@ -91,43 +100,6 @@ def get_available_regions(accountid):
 			continue
 
 	return account_regions
-
-################################################################################################
-# Get list of IAM users
-################################################################################################
-def get_iam_user_list(accountid, account_alias):
-	iam = create_client(accountid, 'us-east-1', 'iam')
-
-	user_list = []
-	# Get list of all users in paginated list
-	next_marker = False
-	while True:
-		if not next_marker:
-			try:
-				response = iam.list_users()
-				user_list = user_list + response['Users']
-				if response.get('Marker', ''):
-					next_marker = True
-					marker = response['Marker']
-				else:
-					break # no more users left to list
-			except Exception as e:
-				print(e)
-				exit(1)
-
-		elif next_marker:
-			try:
-				response = iam.list_users(Marker=marker)
-				user_list = user_list + response['Users']
-				if response.get('Marker', ''):
-					next_marker = True
-					marker = response['Marker']
-				else:
-					break # no more users left to list
-			except Exception as e:
-				print(e)
-				exit(1)
-	return user_list
 
 
 ################################################################################################

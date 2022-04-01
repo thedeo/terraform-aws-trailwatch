@@ -24,22 +24,16 @@ def lambda_handler(event, context):
 	elif report_type == 'user':
 		print(f'Starting {report_type} logic ...')
 		import user
-		user.start(event)
+		return user.start(event)
 
 	# AMI
 	elif report_type == 'ami':
 		print(f'Starting {report_type} logic ...')
 		import ami
-		ami.start(event)
+		return ami.start(event)
 
 	# Security Group
 	elif report_type == 'securitygroup':
 		print(f'Starting {report_type} logic ...')
 		import securitygroup
-		securitygroup.start(event)
-
-
-	return {
-		'statusCode': 200,
-		'body': json.dumps(f'Finished Primary Logic.')
-	}
+		return securitygroup.start(event)
