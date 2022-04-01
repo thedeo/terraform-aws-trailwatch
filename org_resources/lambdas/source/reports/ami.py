@@ -1,12 +1,5 @@
 import boto3
-import os
-import re
-import json
 import logging
-import datetime
-
-from time import sleep
-from botocore.exceptions import ClientError
 
 from common import create_client
 from common import get_available_regions
