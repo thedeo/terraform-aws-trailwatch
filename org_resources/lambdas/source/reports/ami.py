@@ -5,6 +5,8 @@ from common import create_client
 from common import get_available_regions
 from common import retry
 from common import clean_account_name
+from common import create_report_table
+from common import swap_report_table
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -217,10 +219,10 @@ def start(event):
 
 	if mode == 'b':
 		# Mode b collects detailed instance image data and perform analysis on it. The result is stored in DynamoDB.
-		report_table = f'{project_name}-report-{report_type}'
-		account_id = event['account_id']
+		account_id    = event['account_id']
 		account_alias = event['account_alias']
-		region = event['region']
+		region        = event['region']
+		report_table  = create_report_table(project_name, report_type, 'account_id', 'instance_id')
 		
 		print(f'Getting instance list for {account_alias}({account_id}) - {region}')
 		instance_list = get_instance_list(account_id, account_alias, region)
@@ -236,3 +238,7 @@ def start(event):
 			send_to_dynamodb(account_id, account_alias, processed_data_list, report_table)
 		else:
 			print(f'No instances found for {account_alias}({account_id}) - {region}')
+
+	if mode == 'cleanup':
+		# We will update the active table to the one we just created in mode a.
+		swap_report_table(project_name, report_type)

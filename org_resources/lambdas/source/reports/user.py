@@ -10,6 +10,8 @@ from botocore.exceptions import ClientError
 from common import create_client
 from common import retry
 from common import clean_account_name
+from common import create_report_table
+from common import swap_report_table
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -909,7 +911,9 @@ def analyze_user_data(account_id, account_alias, packaged_raw_user_data):
 	return processed_user_data_list
 
 
-def send_to_dynamodb(account_id, account_alias, processed_user_data_list, report_table, dynamodb):
+def send_to_dynamodb(account_id, account_alias, processed_user_data_list, report_table):
+	dynamodb = boto3.client('dynamodb', region_name='us-east-1')
+
 	request_items_batch = []
 	count = 0
 	retry_limit = 3
@@ -967,6 +971,8 @@ def start(event):
 		exit(1)
 
 	if mode == 'a':
+		report_table = create_report_table(project_name, report_type, 'account_id', 'user_arn')
+
 		# Mode a collects a list of users, divide them into 50 user chunks for processing.
 		account_id 	  = event['payload']['Id']
 		account_name  = event['payload']['Name']
@@ -984,18 +990,18 @@ def start(event):
 			'account_name':  account_name,
 			'account_alias': account_alias,
 			'report_type':   report_type,
+			'report_table':  report_table,
 			'mode':          'b',
-			'user_lists': user_lists
+			'user_lists':    user_lists
 		}
 
 	if mode == 'b':
 		# Mode b collects detailed user data and perform analysis on it. The result is stored in DynamoDB.
-		dynamodb = boto3.client('dynamodb', region_name='us-east-1')
-		report_table = f'{project_name}-report-{report_type}'
 		account_id = event['account_id']
 		account_alias = event['account_alias']
 		user_list = event['user_list']
 		num_users = len(user_list)
+		report_table = event['report_table']
 
 		print(f'Getting detailed data for {num_users} users in {account_alias}({account_id})...')
 		packaged_raw_user_data = get_raw_user_data(account_id, account_alias, user_list)
@@ -1004,4 +1010,8 @@ def start(event):
 		processed_user_data_list = analyze_user_data(account_id, account_alias, packaged_raw_user_data)
 
 		print(f'Sending data for {num_users} users in {account_alias}({account_id}) to DynamoDB...')
-		send_to_dynamodb(account_id, account_alias, processed_user_data_list, report_table, dynamodb)
+		send_to_dynamodb(account_id, account_alias, processed_user_data_list, report_table)
+
+	if mode == 'cleanup':
+		# We will update the active table to the one we just created in mode a.
+		swap_report_table(project_name, report_type)

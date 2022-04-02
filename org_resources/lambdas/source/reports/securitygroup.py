@@ -6,6 +6,8 @@ from common import create_client
 from common import get_available_regions
 from common import retry
 from common import clean_account_name
+from common import create_report_table
+from common import swap_report_table
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -89,7 +91,7 @@ def get_db_security_groups(account_id, account_alias, region):
 	return db_security_group_list
 
 
-def divide_list(l, n, account_id, account_name, account_alias, region, report_type, mode):
+def divide_list(l, n, account_id, account_name, account_alias, region, report_type, report_table, mode):
 	# This function will divide lists into chunks while also inserting data
 	# needed for the state machine to loop over the information properly.
 	for i in range(0, len(l), n): # i will increment by n
@@ -99,6 +101,7 @@ def divide_list(l, n, account_id, account_name, account_alias, region, report_ty
 				'account_alias': account_alias,
 				'region':        region,
 				'report_type':   report_type,
+				'report_table':  report_table,
 				'mode':          mode,
 				'list_batch': 	 l[i:i + n] # reference by list index ex. 0:49,50:99, etc
 			  }
@@ -311,19 +314,19 @@ def start(event):
 
 	if mode == 'b':
 		# Mode b collects detailed collects a list of security groups and db security groups (rds)
-		report_table = f'{project_name}-report-{report_type}'
 		account_id = event['account_id']
 		account_name = event['account_name']
 		account_alias = event['account_alias']
 		region = event['region']
+		report_table = create_report_table(project_name, report_type, 'account_id', 'rule_id')
 
 		print(f'Getting security group lists for {region} in {account_alias}({account_id})')
 		security_group_list = get_security_groups(account_id, account_alias, region)
 		db_security_group_list = get_db_security_groups(account_id, account_alias, region)
 		
 		# Divide lists into chunks of 50 to avoid lambda limits
-		divided_sg_list = list(divide_list(security_group_list, 50, account_id, account_name, account_alias, region, report_type, 'c_ec2'))
-		divided_db_sg_list = list(divide_list(db_security_group_list, 50, account_id, account_name, account_alias, region, report_type, 'c_rds'))
+		divided_sg_list = list(divide_list(security_group_list, 50, account_id, account_name, account_alias, region, report_type, report_table, 'c_ec2'))
+		divided_db_sg_list = list(divide_list(db_security_group_list, 50, account_id, account_name, account_alias, region, report_type, report_table, 'c_rds'))
 
 		group_lists = divided_sg_list + divided_db_sg_list
 
@@ -334,12 +337,12 @@ def start(event):
 
 	if mode == 'c_ec2':
 		# Mode c_ec2 collects detailed ec2 security group data. The results are stored in DynamoDB.
-		report_table = f'{project_name}-report-{report_type}'
 		account_id = event['account_id']
 		account_alias = event['account_alias']
 		region = event['region']
 		security_group_list = event['list_batch']
 		num_security_groups = len(security_group_list)
+		report_table = event['report_table']
 		
 		print(f'Analyzing data for {num_security_groups} security groups in {region} - {account_alias}({account_id})...')
 		processed_data_list = analyze_ec2_data(account_id, account_alias, region, security_group_list)
@@ -350,15 +353,19 @@ def start(event):
 
 	if mode == 'c_rds':
 		# Mode c_rds collects detailed rds db security group data. The results are stored in DynamoDB.
-		report_table = f'{project_name}-report-{report_type}'
 		account_id = event['account_id']
 		account_alias = event['account_alias']
 		region = event['region']
 		db_security_group_list = event['list_batch']
 		num_security_groups = len(db_security_group_list)
+		report_table = event['report_table']
 		
 		print(f'Analyzing data for {num_security_groups} db security groups in {region} - {account_alias}({account_id})...')
 		processed_data_list = analyze_rds_data(account_id, account_alias, region, db_security_group_list)
 
 		print(f'Sending data for {num_security_groups} db security groups in {account_alias}({account_id}) to DynamoDB...')
 		send_to_dynamodb(account_id, account_alias, processed_data_list, report_table)
+
+	if mode == 'cleanup':
+		# We will update the active table to the one we just created in mode a.
+		swap_report_table(project_name, report_type)

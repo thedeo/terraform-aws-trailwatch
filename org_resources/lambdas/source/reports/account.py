@@ -5,6 +5,8 @@ import datetime
 from common import create_client
 from common import retry
 from common import clean_account_name
+from common import create_report_table
+from common import swap_report_table
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -293,20 +295,26 @@ def send_to_dynamodb(account_id, account_alias, processed_data_list, report_tabl
 ################################################################################################
 def start(event):
 	report_type = event.get('report_type', '')
+	mode		= event.get('mode', '')
 
 	if not report_type == 'account':
 		print('Event  does not match report type "account".')
 		print(event)
 		exit(1)
 
-	account_id 	  = event['payload']['Id']
-	account_name  = event['payload']['Name']
-	account_alias = clean_account_name(account_name)
-	services_used = get_service_usage(account_id, account_alias)
-	report_table = f'{project_name}-report-{report_type}'
+	if mode == 'a':
+		account_id 	  = event['payload']['Id']
+		account_name  = event['payload']['Name']
+		account_alias = clean_account_name(account_name)
+		services_used = get_service_usage(account_id, account_alias)
+		report_table  = create_report_table(project_name, report_type, 'account_id', 'account_alias')
 
-	print(f'Analizing data for {account_id}({account_alias})...')
-	processed_data_list = analyze_data(account_id, account_alias, event, services_used)
+		print(f'Analizing data for {account_id}({account_alias})...')
+		processed_data_list = analyze_data(account_id, account_alias, event, services_used)
 
-	print(f'Sending data for {account_alias}({account_id}) to DynamoDB...')
-	send_to_dynamodb(account_id, account_alias, processed_data_list, report_table)
+		print(f'Sending data for {account_alias}({account_id}) to DynamoDB...')
+		send_to_dynamodb(account_id, account_alias, processed_data_list, report_table)
+
+	if mode == 'cleanup':
+		# We will update the active table to the one we just created in mode a.
+		swap_report_table(project_name, report_type)
