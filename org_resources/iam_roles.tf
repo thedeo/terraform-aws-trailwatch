@@ -335,7 +335,10 @@ resource "aws_iam_role_policy" "report_automation_master" {
           "dynamodb:PutItem",
           "dynamodb:GetItem",
           "dynamodb:UpdateItem",
-          "dynamodb:BatchWriteItem"
+          "dynamodb:BatchWriteItem",
+          "dynamodb:CreateTable",
+          "dynamodb:DeleteTable",
+          "dynamodb:DescribeTable"
         ]
         Effect   = "Allow"
         Resource = [

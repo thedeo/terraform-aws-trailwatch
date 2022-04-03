@@ -57,13 +57,14 @@ resource "aws_sfn_state_machine" "report_account" {
         "States": {
           "Inject Report Type": {
             "Type": "Pass",
-            "Next": "Lambda Invoke",
+            "Next": "Analyze Accounts",
             "Parameters": {
               "payload.$": "$",
-              "report_type": "account"
+              "report_type": "account",
+              "mode": "a"
             }
           },
-          "Lambda Invoke": {
+          "Analyze Accounts": {
             "Type": "Task",
             "Resource": "arn:aws:states:::lambda:invoke",
             "OutputPath": "$.Payload",
@@ -87,8 +88,33 @@ resource "aws_sfn_state_machine" "report_account" {
           }
         }
       },
-      "End": true,
-      "InputPath": "$.Accounts"
+      "InputPath": "$.Accounts",
+      "Next": "Perform Cleanup"
+    },
+    "Perform Cleanup": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload": {
+          "report_type": "account",
+          "mode": "cleanup"
+        },
+        "FunctionName": "${aws_lambda_function.reports.arn}:$LATEST"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "End": true
     }
   }
 }
@@ -192,6 +218,31 @@ resource "aws_sfn_state_machine" "report_user" {
         }
       },
       "InputPath": "$.Accounts",
+      "Next": "Perform Cleanup"
+    },
+    "Perform Cleanup": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${aws_lambda_function.reports.arn}:$LATEST",
+        "Payload": {
+          "report_type": "user",
+          "mode": "cleanup"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
       "End": true
     }
   }
@@ -296,6 +347,31 @@ resource "aws_sfn_state_machine" "report_ami" {
         }
       },
       "InputPath": "$.Accounts",
+      "Next": "Perform Cleanup"
+    },
+    "Perform Cleanup": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${aws_lambda_function.reports.arn}:$LATEST",
+        "Payload": {
+          "report_type": "ami",
+          "mode": "cleanup"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
       "End": true
     }
   }
@@ -433,6 +509,31 @@ resource "aws_sfn_state_machine" "report_securitygroup" {
         }
       },
       "InputPath": "$.Accounts",
+      "Next": "Perform Cleanup"
+    },
+    "Perform Cleanup": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${aws_lambda_function.reports.arn}:$LATEST",
+        "Payload": {
+          "report_type": "securitygroup",
+          "mode": "cleanup"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
       "End": true
     }
   }

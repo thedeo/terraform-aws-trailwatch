@@ -293,6 +293,14 @@ def start(event):
 		print(event)
 		exit(1)
 
+	if mode == 'bootstrap':
+		report_table = create_report_table(project_name, report_type, 'account_id', 'rule_id')
+
+		return {
+			'statusCode':   200,
+			'report_table': report_table
+		}
+
 	if mode == 'a':
 		# Mode a will collect a list of regions
 		account_id 	  = event['payload']['Id']
@@ -318,7 +326,6 @@ def start(event):
 		account_name = event['account_name']
 		account_alias = event['account_alias']
 		region = event['region']
-		report_table = create_report_table(project_name, report_type, 'account_id', 'rule_id')
 
 		print(f'Getting security group lists for {region} in {account_alias}({account_id})')
 		security_group_list = get_security_groups(account_id, account_alias, region)

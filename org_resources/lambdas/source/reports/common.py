@@ -6,6 +6,8 @@ import logging
 import datetime
 
 from time import sleep
+from botocore.exceptions import ClientError
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -18,7 +20,6 @@ region			 	= os.environ['region']
 org_account_id		= os.environ['org_account_id']
 member_role_name 	= os.environ['member_role_name']
 session_name 		= f'{project_name}-report'
-
 
 ################################################################################################
 # Regex
@@ -104,12 +105,16 @@ def get_available_regions(account_id):
 # DynamoDB - Manage Report Tables
 ################################################################################################
 def create_report_table(project_name, report_type, table_hash, table_range):
+	dynamodb = boto3.client('dynamodb', region_name='us-east-1')
+	retry_limit = 3
+
 	#########################################################
 	# Create DynamoDB table
 	#########################################################
 	timestamp = datetime.datetime.utcnow().strftime('%m%d%Y-%H%M%S%f')[:-4]
-	retry_count = 0
 	next_table_name = f'{project_name}-report-{report_type}-{timestamp}'
+
+	retry_count = 0
 	while True:
 		try:
 			print(f'>>> Creating table [{next_table_name}]...')
@@ -147,6 +152,7 @@ def create_report_table(project_name, report_type, table_hash, table_range):
 	#########################################################
 	# Update active table
 	#########################################################
+	retry_count = 0
 	while True:
 		try:
 			session = boto3.Session(region_name='us-east-1')
@@ -158,58 +164,63 @@ def create_report_table(project_name, report_type, table_hash, table_range):
 			retry_count = retry(e, f'Create DynamoDB table object.',
 								retry_count, retry_limit)
 
+	retry_count = 0
 	while True:
 		# Check to see if 'active' or 'next' table have been set already.
 		try:
 			get_response = table.get_item(Key={'report_type': report_type})
-			if get_response.get('Item', {}).get('active_table', ''):
+			break
+		except Exception as e:
+			retry_count = retry(e, f'Get {report_type} values from DynamoDB!',
+								retry_count, retry_limit)
 
-				# If there is an active_table, store next table name in 'next_table'.
-				while True:
-					try:
-						update_response = table.update_item(
-							Key={
-								'report_type': report_type,
-							},
-							UpdateExpression='SET #attribute1 = :value1',
-							ExpressionAttributeNames={
-								'#attribute1': 'next_table'
-							},
-							ExpressionAttributeValues={
-								':value1': next_table_name
-							}
-						)
-						break 
-					except Exception as e:
-						retry_count = retry(e, f'Set next table as {next_table_name} in DynamoDB!',
-											retry_count, retry_limit)
+	if get_response.get('Item', {}).get('active_table', ''):
 
-			else:
-				# If there is NOT an active_table, store next table name to 'active_table'.
-				while True:
-					try:
-						update_response = table.update_item(
-							Key={
-								'report_type': report_type,
-							},
-							UpdateExpression='SET #attribute1 = :value1',
-							ExpressionAttributeNames={
-								'#attribute1': 'active_table'
-							},
-							ExpressionAttributeValues={
-								':value1': next_table_name
-							}
-						)
-						break 
-					except Exception as e:
-						retry_count = retry(e, f'Set active table as {next_table_name} in DynamoDB!',
-											retry_count, retry_limit)
+		# If there is an active_table, store next table name in 'next_table'.
+		retry_count = 0
+		while True:
+			try:
+				update_response = table.update_item(
+					Key={
+						'report_type': report_type,
+					},
+					UpdateExpression='SET #attribute1 = :value1',
+					ExpressionAttributeNames={
+						'#attribute1': 'next_table'
+					},
+					ExpressionAttributeValues={
+						':value1': next_table_name
+					}
+				)
+				break 
+			except Exception as e:
+				retry_count = retry(e, f'Set next table as {next_table_name} in DynamoDB!',
+									retry_count, retry_limit)
+
+	else:
+		# If there is NOT an active_table, store next table name to 'active_table'.
+		retry_count = 0
+		while True:
+			try:
+				entry = {}
+				entry['report_type'] = report_type
+				entry['active_table'] = next_table_name
+				table.put_item(Item=entry)
+				break 
+			except Exception as e:
+				retry_count = retry(e, f'Set active table as {next_table_name} in DynamoDB!',
+									retry_count, retry_limit)
+
+	return next_table_name
 
 
 def swap_report_table(project_name, report_type):
+	dynamodb = boto3.client('dynamodb', region_name='us-east-1')
+
 	#########################################################
 	# Update active table
 	#########################################################
+	retry_count = 0
 	while True:
 		try:
 			session = boto3.Session(region_name='us-east-1')
@@ -221,33 +232,32 @@ def swap_report_table(project_name, report_type):
 			retry_count = retry(e, f'Create DynamoDB table object.',
 								retry_count, retry_limit)
 
-	while True:
-		try:
-			old_active_table = table.get_item(Key={'report_type': report_type}).get('Item', {}).get('active_table', '')
-			new_active_table = table.get_item(Key={'report_type': report_type}).get('Item', {}).get('next_table', '')
+		# Set 'active_table' to the value of 'next_table' which was just freshly populated.
+		# Set 'next_table' to empty string.
+		retry_count = 0
+		while True:
+			try:
+				old_active_table = table.get_item(Key={'report_type': report_type}).get('Item', {}).get('active_table', '')
+				new_active_table = table.get_item(Key={'report_type': report_type}).get('Item', {}).get('next_table', '')
 
-			# Set 'active_table' to the value of 'next_table' which was just freshly populated.
-			# Set 'next_table' to empty string.
-			while True:
-				try:
-					update_response = table.update_item(
-						Key={
-							'report_type': report_type,
-						},
-						UpdateExpression='SET #attribute1 = :value1, SET #attribute2 = :value2',
-						ExpressionAttributeNames={
-							'#attribute1': 'active_table',
-							'#attribute2': 'next_table'
-						},
-						ExpressionAttributeValues={
-							':value1': new_active_table,
-							':value2': ''
-						}
-					)
-					break
-				except Exception as e:
-					retry_count = retry(e, f'Set active table as {new_active_table} in DynamoDB!',
-										retry_count, retry_limit)
+				update_response = table.update_item(
+					Key={
+						'report_type': report_type,
+					},
+					UpdateExpression='SET #attribute1 = :value1, SET #attribute2 = :value2',
+					ExpressionAttributeNames={
+						'#attribute1': 'active_table',
+						'#attribute2': 'next_table'
+					},
+					ExpressionAttributeValues={
+						':value1': new_active_table,
+						':value2': ''
+					}
+				)
+				break
+			except Exception as e:
+				retry_count = retry(e, f'Set active table as {new_active_table} in DynamoDB!',
+									retry_count, retry_limit)
 
 	#########################################################
 	# Delete old table

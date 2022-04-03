@@ -970,8 +970,15 @@ def start(event):
 		print(event)
 		exit(1)
 
-	if mode == 'a':
+	if mode == 'bootstrap':
 		report_table = create_report_table(project_name, report_type, 'account_id', 'user_arn')
+
+		return {
+			'statusCode':   200,
+			'report_table': report_table
+		}
+
+	if mode == 'a':
 
 		# Mode a collects a list of users, divide them into 50 user chunks for processing.
 		account_id 	  = event['payload']['Id']

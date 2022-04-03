@@ -198,6 +198,14 @@ def start(event):
 		print(event)
 		exit(1)
 
+	if mode == 'bootstrap':
+		report_table = create_report_table(project_name, report_type, 'account_id', 'instance_id')
+
+		return {
+			'statusCode':   200,
+			'report_table': report_table
+		}
+
 	if mode == 'a':
 		# Mode a will collect a list of users, divide them into 50 user chunks for processing.
 		account_id 	  = event['payload']['Id']
@@ -222,7 +230,6 @@ def start(event):
 		account_id    = event['account_id']
 		account_alias = event['account_alias']
 		region        = event['region']
-		report_table  = create_report_table(project_name, report_type, 'account_id', 'instance_id')
 		
 		print(f'Getting instance list for {account_alias}({account_id}) - {region}')
 		instance_list = get_instance_list(account_id, account_alias, region)
