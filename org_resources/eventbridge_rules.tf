@@ -21,7 +21,7 @@ resource "aws_cloudwatch_event_target" "reports" {
 resource "aws_cloudwatch_event_rule" "email_summary" {
   name                = "${var.project_name}-email-summary"
   description         = "Reoccurring email summary."
-  schedule_expression = var.email_summary_frequency
+  schedule_expression = "rate(${var.email_summary_frequency} minutes)"
 }
 
 resource "aws_cloudwatch_event_target" "email_summary" {

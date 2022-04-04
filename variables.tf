@@ -51,7 +51,7 @@ variable "ses_identity_arn" {
 }
 
 variable "email_summary_frequency" {
-  default     = "cron(0 * * * ? *)"
+  default     = "60"
   description = "In minutes."
 }
 
