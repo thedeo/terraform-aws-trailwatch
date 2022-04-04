@@ -32,7 +32,7 @@ The cost drivers are going to be the ECS containers, ALB and Lambda invocations.
 ![1](https://github.com/thedeo/trailwatch/raw/master/images/1.png)
 ![2](https://github.com/thedeo/trailwatch/raw/master/images/2.png)
 ![3](https://github.com/thedeo/trailwatch/raw/master/images/3.png)
-![4](https://github.com/thedeo/trailwatch/raw/master/images/4.png)
+![4](https://github.com/thedeo/trailwatch/raw/master/images/4_2.png)
 
 ## Prerequisites
 Due to the nature of this solution, there are some manual prerequisites. These are typically things that you will have already done unless you're starting with a fresh AWS account/organization. As of this project's creation there are no APIs avilable to automate *some* of these configurations. Some of these are left manual due to the likelihood you may have already configured them for other projects.
