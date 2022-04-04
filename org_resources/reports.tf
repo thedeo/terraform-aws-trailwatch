@@ -1,9 +1,28 @@
+###################
+# Run Reports Once
+###################
+resource "aws_lambda_invocation" "run_reports_once" {
+  depends_on = [aws_lambda_function.reports]
+  for_each = var.reports
+
+  function_name = aws_lambda_function.reports.function_name
+  input = jsonencode({
+    report_type = each.value
+    mode        = "bootstrap"
+  })
+
+  lifecycle {
+    ignore_changes = all
+  }
+}
+
+
 ##################
 # Lambda
 ##################
 data "archive_file" "reports" {
   type        = "zip"
-  source_dir = "${path.module}/lambdas/source/reports/"
+  source_dir  = "${path.module}/lambdas/source/reports/"
   output_path = "${path.module}/lambdas/zipped/reports.zip"
 }
 
