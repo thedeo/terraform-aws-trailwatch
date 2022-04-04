@@ -1,3 +1,22 @@
+# Reports
+resource "aws_cloudwatch_event_rule" "reports" {
+  for_each = var.reports
+
+  name                = "${var.project_name}-report-${each.value}"
+  description         = "Reoccurring ${each.value} report execution."
+  schedule_expression = "rate(${var.dashboard_report_frequency} minutes)"
+}
+
+resource "aws_cloudwatch_event_target" "reports" {
+  depends_on = [aws_cloudwatch_event_rule.reports]
+  for_each = var.reports
+
+  rule       = "${var.project_name}-report-${each.value}"
+  target_id  = "${var.project_name}-report-${each.value}"
+  arn        = "arn:aws:states:${var.region}:${var.org_account_id}:stateMachine:${var.project_name}-report-${each.value}"
+  role_arn   = aws_iam_role.report_scheduled_event.arn
+}
+
 # Email Summary
 resource "aws_cloudwatch_event_rule" "email_summary" {
   name                = "${var.project_name}-email-summary"
@@ -50,7 +69,7 @@ resource "aws_cloudwatch_event_target" "regional_event_rules" {
 }
 
 #==================================================================
-# All other regional rules had to be done in org_cf_stacks.tf,
-# you cannot use use interpolation with tf providers.
+# All other regional rules had to be done in org_cf_stacks.tf.
+# At this time, you cannot use use interpolation with tf providers.
 # I tried, but doesn't work.
 #==================================================================

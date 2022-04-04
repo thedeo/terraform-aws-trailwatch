@@ -298,3 +298,230 @@ resource "aws_iam_role_policy_attachment" "eventbridge_lambda" {
   policy_arn = aws_iam_policy.eventbridge_lambda.arn
   role = aws_iam_role.eventbridge_lambda.name
 }
+
+##############################
+# Report Automation Master
+##############################
+resource "aws_iam_role" "report_automation_master" {
+  name = "${var.project_name}-report-automation-master"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "report_automation_master" {
+  name = "${var.project_name}-report-automation-master"
+  role = aws_iam_role.report_automation_master.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "dynamodb:Scan",
+          "dynamodb:PutItem",
+          "dynamodb:GetItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:BatchWriteItem",
+          "dynamodb:CreateTable",
+          "dynamodb:DeleteTable",
+          "dynamodb:DescribeTable"
+        ]
+        Effect   = "Allow"
+        Resource = [
+            "arn:aws:dynamodb:us-east-1:${var.org_account_id}:table/${var.project_name}-report-*"
+        ]
+      },
+      {
+        Action = [
+          "sts:AssumeRole"
+        ]
+        Effect   = "Allow"
+        Resource = [
+            "arn:aws:iam::*:role/${var.project_name}-report-automation"
+        ]
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "report_automation_master_AWSLambdaBasicExecutionRole" {
+  role       = aws_iam_role.report_automation_master.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+##############################
+# Report Automation
+##############################
+resource "aws_iam_role" "report_automation" {
+  name = "${var.project_name}-report-automation"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "AWS": "${aws_iam_role.report_automation_master.arn}"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "report_automation" {
+  name = "${var.project_name}-report-automation"
+  role = aws_iam_role.report_automation.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "iam:ListUsers",
+          "iam:ListUserPolicies",
+          "iam:ListAttachedUserPolicies",
+          "iam:GetUserPolicy",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion",
+          "iam:ListGroupsForUser",
+          "iam:ListGroupPolicies",
+          "iam:ListAttachedGroupPolicies",
+          "iam:GetGroupPolicy",
+          "iam:ListAccessKeys",
+          "iam:GetAccessKeyLastUsed",
+          "iam:GetLoginProfile",
+          "iam:ListMFADevices",
+          "ec2:DescribeRegions",
+          "ec2:DescribeInstances",
+          "ec2:DescribeImages",
+          "ec2:DescribeSecurityGroups",
+          "rds:DescribeDBSecurityGroups",
+          "ce:GetCostAndUsage"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+    ]
+  })
+}
+
+
+
+################################
+# Report Schedule Event
+################################
+resource "aws_iam_role" "report_scheduled_event" {
+  name = "${var.project_name}-report-scheduled-event"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "AWS": "${aws_iam_role.report_automation_master.arn}"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "report_scheduled_event" {
+  name = "${var.project_name}-report-scheduled-event"
+  role = aws_iam_role.report_scheduled_event.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "states:StartExecution"
+        ]
+        Effect   = "Allow"
+        Resource = "arn:aws:states:${var.region}:${var.org_account_id}:stateMachine:${var.project_name}-report-*"
+      },
+    ]
+  })
+}
+
+
+
+
+
+
+################################
+# Report States (Step Functions)
+################################
+resource "aws_iam_role" "report_states" {
+  name = "${var.project_name}-report-states"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "states.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "report_states" {
+  name = "${var.project_name}-report-states"
+  role = aws_iam_role.report_states.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "lambda:InvokeFunction"
+        ]
+        Effect   = "Allow"
+        Resource = [
+        "${aws_lambda_function.reports.arn}:$LATEST"
+        ]
+      },
+      {
+        Action = [
+          "organizations:ListAccounts"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "report_state_AWSLambdaBasicExecutionRole" {
+  role       = aws_iam_role.report_states.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}

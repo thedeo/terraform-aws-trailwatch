@@ -41,3 +41,27 @@ resource "aws_cloudwatch_metric_alarm" "email_summary" {
     Resource     = "${aws_lambda_function.email_summary.function_name}"
   }
 }
+
+
+resource "aws_cloudwatch_metric_alarm" "reports" {
+  for_each = var.reports
+
+  alarm_name = "${var.project_name}-report-${each.value}"
+  alarm_description   = "${var.project_name}-${each.value} report state machine errors."
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods = "1"
+  metric_name = "ExecutionsFailed"
+  namespace = "AWS/States"
+  period = "300"
+  statistic = "Maximum"
+  threshold = 1
+  treat_missing_data = "notBreaching"
+
+  dimensions = {
+    StateMachineArn = "arn:aws:states:${var.region}:${var.org_account_id}:stateMachine:${var.project_name}-report-${each.value}"
+  }
+
+  alarm_actions = [
+    "${aws_sns_topic.alarms.arn}",
+  ]
+}

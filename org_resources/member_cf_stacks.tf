@@ -66,6 +66,75 @@ resource "aws_cloudformation_stack_set" "iam_roles" {
           ]
         }
       }
+    },
+    "ReportAutomationRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  "${aws_iam_role.report_automation_master.arn}"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "MaxSessionDuration": 3600,
+        "RoleName": "${aws_iam_role.report_automation.name}"
+      }
+    },
+    "ReportAutomationPolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "DependsOn": "ReportAutomationRole",
+      "Properties": {
+        "Description": "Permissions to pull report data.",
+        "ManagedPolicyName": "${aws_iam_role.report_automation.name}",
+        "Path": "/",
+        "Roles": [
+          "${aws_iam_role.report_automation.name}"
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "iam:ListUsers",
+                "iam:ListUserPolicies",
+                "iam:ListAttachedUserPolicies",
+                "iam:GetUserPolicy",
+                "iam:GetPolicy",
+                "iam:GetPolicyVersion",
+                "iam:ListGroupsForUser",
+                "iam:ListGroupPolicies",
+                "iam:ListAttachedGroupPolicies",
+                "iam:GetGroupPolicy",
+                "iam:ListAccessKeys",
+                "iam:GetAccessKeyLastUsed",
+                "iam:GetLoginProfile",
+                "iam:ListMFADevices",
+                "ec2:DescribeRegions",
+                "ec2:DescribeInstances",
+                "ec2:DescribeImages",
+                "ec2:DescribeSecurityGroups",
+                "rds:DescribeDBSecurityGroups",
+                "ce:GetCostAndUsage"
+              ],
+              "Resource": [
+                "*"
+              ]
+            }
+          ]
+        }
+      }
     }
   }
 }

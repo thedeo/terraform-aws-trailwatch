@@ -5,6 +5,8 @@ from django.template import loader
 from django.http import HttpResponse
 
 from dashboard.vars import *
+from dashboard.aws_functions import get_report_table
+from dashboard.aws_functions import get_step_function_status
 
 import boto3
 import json
@@ -12,6 +14,10 @@ import botocore
 import datetime
 
 from boto3.dynamodb.conditions import Key, Attr
+
+report_type = 'ami'
+last_run_date = get_step_function_status(report_type)['stopDate'].isoformat()
+report_table  = get_report_table(report_type)
 
 def get_params(request):
     
@@ -22,29 +28,14 @@ def get_params(request):
     
     return params
 
-def get_report_metadata():
-
-    dynamodb = boto3.client('dynamodb', region_name=region)
-
-    key = {}
-    key.setdefault('report_name', {})['S'] = 'AmiUsage'
-
-    try:
-        response = dynamodb.get_item(TableName=f'{project_name}-reports-metadata', Key=key)
-        last_run_date = response['Item']['last_run_date']['S']
-    except Exception as e:
-        print(e)
-        exit(1)
-
-    return last_run_date
-
-
 def get_items(params):
+    report_table  = get_report_table(report_type)
+    last_run_date = get_step_function_status(report_type)['stopDate'].isoformat()
     instances = []
     try:
         session = boto3.Session(region_name=region)
         resource = session.resource('dynamodb')
-        table = resource.Table(f'{project_name}-ami-usage')
+        table = resource.Table(report_table)
     except botocore.exceptions.ClientError as e:
         return 'failed'
     else:
@@ -71,7 +62,7 @@ def get_items(params):
 
     instance_count = len(instances)
 
-    return instances, instance_count
+    return instances, instance_count, last_run_date
 
 def search(request):
     template = loader.get_template('amis.html')
@@ -87,8 +78,7 @@ def search(request):
     #     return render(request, '404.html', {})
 
     params = get_params(request)
-    last_run_date = get_report_metadata()
-    instances, instance_count = get_items(params)
+    instances, instance_count, last_run_date = get_items(params)
     data = {
         'data': instances, 
         'params': params, 

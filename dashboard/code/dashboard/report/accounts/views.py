@@ -5,6 +5,8 @@ from django.template import loader
 from django.http import HttpResponse
 
 from dashboard.vars import *
+from dashboard.aws_functions import get_report_table
+from dashboard.aws_functions import get_step_function_status
 
 import boto3
 import json
@@ -12,6 +14,8 @@ import botocore
 import datetime
 
 from boto3.dynamodb.conditions import Key, Attr
+
+report_type = 'account'
 
 def get_params(request):
     
@@ -22,29 +26,14 @@ def get_params(request):
     
     return params
 
-def get_report_metadata():
-
-    dynamodb = boto3.client('dynamodb', region_name=region)
-
-    key = {}
-    key.setdefault('report_name', {})['S'] = 'Account'
-
-    try:
-        response = dynamodb.get_item(TableName=f'{project_name}-reports-metadata', Key=key)
-        last_run_date = response['Item']['last_run_date']['S']
-    except Exception as e:
-        print(e)
-        exit(1)
-
-    return last_run_date
-
-
 def get_items(params):
+    report_table  = get_report_table(report_type)
+    last_run_date = get_step_function_status(report_type)['stopDate'].isoformat()
     accounts = []
     try:
         session = boto3.Session(region_name=region)
         resource = session.resource('dynamodb')
-        table = resource.Table(f'{project_name}-account-report')
+        table = resource.Table(report_table)
     except botocore.exceptions.ClientError as e:
         return 'failed'
     else:
@@ -71,7 +60,7 @@ def get_items(params):
 
     account_count = len(accounts)
 
-    return accounts, account_count
+    return accounts, account_count, last_run_date
 
 def search(request):
     template = loader.get_template('accounts.html')
@@ -87,8 +76,7 @@ def search(request):
     #     return render(request, '404.html', {})
 
     params = get_params(request)
-    last_run_date = get_report_metadata()
-    accounts, account_count = get_items(params)
+    accounts, account_count, last_run_date = get_items(params)
     data = {
         'data': accounts, 
         'params': params, 

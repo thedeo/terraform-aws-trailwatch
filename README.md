@@ -3,7 +3,16 @@
 ### What is TrailWatch?
 TrailWatch is an open source monitoring solution for AWS Organizations. Deployment with Terraform makes it easy for anyone to implement and tear down.
 
-The dashboard web interface uses Django along with the DataTables library to produce dynamic data views.
+The dashboard web interface uses Django along with the DataTables library to produce dynamic data views. 
+
+The dashboard provides 4 built in reports:
+
+1. **account**
+2. **ami**
+3. **securitygroup**
+4. **user**
+
+These reports provide the ability to filter and search resources across the entire organization from one user interface. Reports run every hour by default but this can be customized through a Terraform variable.
 
 By default an hourly event summary email will be sent to email addresses of your choice. The email doesn't include specifics but instead just enough for you to understand what is happening in your AWS accounts. This helps engineers get visibility without being spammed with too much detail. If you need to dig further into an event, a link to the dashboard will take you just to the set of events from that time period.
 
@@ -16,13 +25,15 @@ TrailWatch is all about visibility into your entire organization at the control 
 TrailWatch is designed to scale with your organization which makes it a great low cost choice for small to medium sized environments. You can deploy in a larger environment but just be aware it has not been fully tested in large environments.
 
 ### How much will it cost?
-The cost drivers are going to be the ECS containers, ALB and Lambda invocations. You shouldn't expect the cost to be more than about $25/month. This may vary depending on the size of your environment. But as always be sure to track your spend.
+The cost drivers are going to be the ECS containers, ALB and Lambda invocations. You shouldn't expect the cost to be more than about $25-50/month. This may vary depending on the size of your environment. But as always be sure to track your spend.
 
 
 ## Screenshots
 ![1](https://github.com/thedeo/trailwatch/raw/master/images/1.png)
 ![2](https://github.com/thedeo/trailwatch/raw/master/images/2.png)
 ![3](https://github.com/thedeo/trailwatch/raw/master/images/3.png)
+![4](https://github.com/thedeo/trailwatch/raw/master/images/4.png)
+![5](https://github.com/thedeo/trailwatch/raw/master/images/5.png)
 
 ## Prerequisites
 Due to the nature of this solution, there are some manual prerequisites. These are typically things that you will have already done unless you're starting with a fresh AWS account/organization. As of this project's creation there are no APIs avilable to automate *some* of these configurations. Some of these are left manual due to the likelihood you may have already configured them for other projects.
@@ -51,6 +62,7 @@ Terraform variables are used to name resources and identify existing resources t
 | **alb_tls_cert_arn** 			| ARN of the manually created ACM certificate that for the dashboard domain. The certificate will need to be for **`dashboard.YOURDOMAIN.com`**.  |
 | **dockerhub_username** 		| Required for the CodeBuild project to sign in. This avoids the DockerHub rate limit.|
 | **dockerhub_password** 		| See above. |
+| **dashboard_report_frequency**| How often (minutes) to run the built in reports [account, ami, securitygroup, user]. **Default:** 60min |
 | **ses_identity_arn** 			| ARN of the manually created SES identity/domain that will be used to send email alerts. This domain should match the **alert_sender** email domain.  |
 | **email_summary_frequency** 				| Specify the frequency in minutes for how often event summaries will be sent. **Default:** 60 |
 | **alert_sender** 				| Email address that SES will use to send alerts. Ensure that it matches the domain associated with **ses_identity_arn**. Example: `alerts@example.com` |
@@ -82,7 +94,7 @@ The dashboard has functionality to support ADFS SAML authentication but since th
 
 The EventPatterns configured in **org_resources/variables.tf** can be customized to your liking. You may find them to be too verbose or maybe not verbose enough. If you change them in that file, they will be updated across the entire solution. Just remember that updates to the StackSets can take a long time so be sure to **give it some thought before updating** .
 
-As you can imagine, since everything is written in Terraform you can customize the solution from any aspect you like. I will be making more updates to the solution to provide some added functionality. As you might see in Django templates, some reoccurring reporting logic is in the works but just commented out for now.
+As you can imagine, since everything is written in Terraform you can customize the solution from any aspect you like.
 
 # Troubleshooting
 
