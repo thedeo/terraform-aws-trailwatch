@@ -438,7 +438,7 @@ resource "aws_iam_role" "report_scheduled_event" {
     {
       "Action": "sts:AssumeRole",
       "Principal": {
-        "AWS": "${aws_iam_role.report_automation_master.arn}"
+        "Service": "events.amazonaws.com"
       },
       "Effect": "Allow",
       "Sid": ""
