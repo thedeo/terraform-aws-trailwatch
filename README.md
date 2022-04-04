@@ -3,7 +3,16 @@
 ### What is TrailWatch?
 TrailWatch is an open source monitoring solution for AWS Organizations. Deployment with Terraform makes it easy for anyone to implement and tear down.
 
-The dashboard web interface uses Django along with the DataTables library to produce dynamic data views. The dashboard provides **4 built in reports (account, ami, securitygroup and user)**. These reports provide the ability to filter and search resources across the entire organization from one user interface. Reports run every hour by default but this can be customized through a Terraform variable.
+The dashboard web interface uses Django along with the DataTables library to produce dynamic data views. 
+
+The dashboard provides 4 built in reports:
+
+1. **account**
+2. **ami**
+3. **securitygroup**
+4. **user**
+
+These reports provide the ability to filter and search resources across the entire organization from one user interface. Reports run every hour by default but this can be customized through a Terraform variable.
 
 By default an hourly event summary email will be sent to email addresses of your choice. The email doesn't include specifics but instead just enough for you to understand what is happening in your AWS accounts. This helps engineers get visibility without being spammed with too much detail. If you need to dig further into an event, a link to the dashboard will take you just to the set of events from that time period.
 
