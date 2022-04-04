@@ -20,7 +20,7 @@ resource "aws_dynamodb_table" "events" {
   }
 
   lifecycle {
-    prevent_destroy = false
+    prevent_destroy = true
   }
 }
 
@@ -36,6 +36,6 @@ resource "aws_dynamodb_table" "active_reports" {
   }
 
   lifecycle {
-    prevent_destroy = false
+    prevent_destroy = true
   }
 }
