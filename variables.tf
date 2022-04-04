@@ -39,8 +39,8 @@ variable "dockerhub_password" {
 }
 
 variable "dashboard_report_frequency" {
-  default     = "60"
-  description = "How often (minutes) to run the built in reports [account, ami, securitygroup, user]."
+  default     = "cron(0 * * * ? *)"
+  description = "How often to run the built in reports [account, ami, securitygroup, user]."
 }
 
 
@@ -51,7 +51,7 @@ variable "ses_identity_arn" {
 }
 
 variable "email_summary_frequency" {
-  default     = "60"
+  default     = "cron(0 * * * ? *)"
   description = "In minutes."
 }
 
