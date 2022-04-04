@@ -424,6 +424,53 @@ resource "aws_iam_role_policy" "report_automation" {
 }
 
 
+
+################################
+# Report Schedule Event
+################################
+resource "aws_iam_role" "report_scheduled_event" {
+  name = "${var.project_name}-report-scheduled-event"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "AWS": "${aws_iam_role.report_automation_master.arn}"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "report_scheduled_event" {
+  name = "${var.project_name}-report-scheduled-event"
+  role = aws_iam_role.report_scheduled_event.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "states:StartExecution"
+        ]
+        Effect   = "Allow"
+        Resource = "arn:aws:states:${var.region}:${var.org_account_id}:stateMachine:${var.project_name}-report-*"
+      },
+    ]
+  })
+}
+
+
+
+
+
+
 ################################
 # Report States (Step Functions)
 ################################

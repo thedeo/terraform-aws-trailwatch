@@ -8,6 +8,7 @@ from common import retry
 from common import clean_account_name
 from common import create_report_table
 from common import swap_report_table
+from common import get_report_table
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -294,12 +295,7 @@ def start(event):
 		exit(1)
 
 	if mode == 'bootstrap':
-		report_table = create_report_table(project_name, report_type, 'account_id', 'rule_id')
-
-		return {
-			'statusCode':   200,
-			'report_table': report_table
-		}
+		create_report_table(project_name, report_type, 'account_id', 'rule_id')
 
 	if mode == 'a':
 		# Mode a will collect a list of regions
@@ -326,6 +322,7 @@ def start(event):
 		account_name = event['account_name']
 		account_alias = event['account_alias']
 		region = event['region']
+		report_table = get_report_table(report_type)
 
 		print(f'Getting security group lists for {region} in {account_alias}({account_id})')
 		security_group_list = get_security_groups(account_id, account_alias, region)

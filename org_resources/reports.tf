@@ -42,8 +42,33 @@ resource "aws_sfn_state_machine" "report_account" {
   definition = <<EOF
 {
   "Comment": "AWS Account Report State Machine",
-  "StartAt": "ListAccounts",
+  "StartAt": "Bootstrap Report",
   "States": {
+    "Bootstrap Report": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${aws_lambda_function.reports.arn}:$LATEST",
+        "Payload": {
+          "report_type": "account",
+          "mode": "bootstrap"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "ListAccounts",
+      "OutputPath": "$.Payload"
+    },
     "ListAccounts": {
       "Type": "Task",
       "Parameters": {},
@@ -133,8 +158,33 @@ resource "aws_sfn_state_machine" "report_user" {
   definition = <<EOF
 {
   "Comment": "AWS User Report State Machine",
-  "StartAt": "ListAccounts",
+  "StartAt": "Bootstrap Report",
   "States": {
+    "Bootstrap Report": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${aws_lambda_function.reports.arn}:$LATEST",
+        "Payload": {
+          "report_type": "user",
+          "mode": "bootstrap"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "ListAccounts",
+      "OutputPath": "$.Payload"
+    },
     "ListAccounts": {
       "Type": "Task",
       "Parameters": {},
@@ -211,6 +261,7 @@ resource "aws_sfn_state_machine" "report_user" {
               "account_name.$": "$.Payload.account_name",
               "account_alias.$": "$.Payload.account_alias",
               "report_type.$": "$.Payload.report_type",
+              "report_table.$": "$.Payload.report_table",
               "mode.$": "$.Payload.mode",
               "user_list.$": "$$.Map.Item.Value"
             }
@@ -262,8 +313,33 @@ resource "aws_sfn_state_machine" "report_ami" {
   definition = <<EOF
 {
   "Comment": "AWS AMI Report State Machine",
-  "StartAt": "ListAccounts",
+  "StartAt": "Bootstrap Report",
   "States": {
+    "Bootstrap Report": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${aws_lambda_function.reports.arn}:$LATEST",
+        "Payload": {
+          "report_type": "ami",
+          "mode": "bootstrap"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "ListAccounts",
+      "OutputPath": "$.Payload"
+    },
     "ListAccounts": {
       "Type": "Task",
       "Parameters": {},
@@ -392,8 +468,33 @@ resource "aws_sfn_state_machine" "report_securitygroup" {
   definition = <<EOF
 {
   "Comment": "Security Group Report State Machine",
-  "StartAt": "ListAccounts",
+  "StartAt": "Bootstrap Report",
   "States": {
+    "Bootstrap Report": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${aws_lambda_function.reports.arn}:$LATEST",
+        "Payload": {
+          "report_type": "securitygroup",
+          "mode": "bootstrap"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "ListAccounts",
+      "OutputPath": "$.Payload"
+    },
     "ListAccounts": {
       "Type": "Task",
       "Parameters": {},

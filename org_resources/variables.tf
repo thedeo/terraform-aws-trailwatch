@@ -6,11 +6,17 @@ variable "ignored_iam_principals" {}
 variable "ses_identity_arn" {}
 variable "email_summary_frequency" {}
 variable "dashboard_domain" {}
+variable "dashboard_report_frequency" {}
 variable "org_account_id" {}
 variable "org_root_id" {}
 variable "org_id" {}
 variable "available_regions" {}
 variable "create_cf_stackset_roles" {}
+
+variable "reports" {
+  type    = set(string)
+  default = ["account", "ami", "securitygroup", "user"]
+}
 
 # These map vars are used to populate the eventbridge rules in a "for_each" loop
 variable "global_event_rule_type_map" {

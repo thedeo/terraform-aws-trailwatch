@@ -14,8 +14,7 @@ variable "profile" {
 
 # Dashboard Settings
 variable "trusted_cidrs" {
-  default = ["0.0.0.0/0"]
-  description = "Used to allow network access via Security Group to dashboard web interface."
+  description = "WARNING: Used to allow network access via Security Group to dashboard web interface. Only allow trusted networks."
 }
 
 variable "dashboard_domain" {
@@ -37,6 +36,11 @@ variable "dockerhub_password" {
   #default     = ""
   description = "Used in AWS Codebuild. Stored in Secrets Manager."
   sensitive   = true
+}
+
+variable "dashboard_report_frequency" {
+  default     = "60"
+  description = "How often (minutes) to run the built in reports [account, ami, securitygroup, user]."
 }
 
 

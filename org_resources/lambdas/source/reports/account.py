@@ -7,6 +7,7 @@ from common import retry
 from common import clean_account_name
 from common import create_report_table
 from common import swap_report_table
+from common import get_report_table
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -303,12 +304,7 @@ def start(event):
 		exit(1)
 
 	if mode == 'bootstrap':
-		report_table  = create_report_table(project_name, report_type, 'account_id', 'account_alias')
-
-		return {
-			'statusCode':   200,
-			'report_table': report_table
-		}
+		create_report_table(project_name, report_type, 'account_id', 'account_alias')
 
 	if mode == 'a':
 		account_id 	  = event['payload']['Id']
@@ -320,6 +316,7 @@ def start(event):
 		processed_data_list = analyze_data(account_id, account_alias, event, services_used)
 
 		print(f'Sending data for {account_alias}({account_id}) to DynamoDB...')
+		report_table = get_report_table(report_type)
 		send_to_dynamodb(account_id, account_alias, processed_data_list, report_table)
 
 	if mode == 'cleanup':

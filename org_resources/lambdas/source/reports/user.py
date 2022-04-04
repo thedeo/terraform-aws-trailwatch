@@ -12,6 +12,7 @@ from common import retry
 from common import clean_account_name
 from common import create_report_table
 from common import swap_report_table
+from common import get_report_table
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -971,19 +972,14 @@ def start(event):
 		exit(1)
 
 	if mode == 'bootstrap':
-		report_table = create_report_table(project_name, report_type, 'account_id', 'user_arn')
-
-		return {
-			'statusCode':   200,
-			'report_table': report_table
-		}
+		create_report_table(project_name, report_type, 'account_id', 'user_arn')
 
 	if mode == 'a':
-
 		# Mode a collects a list of users, divide them into 50 user chunks for processing.
 		account_id 	  = event['payload']['Id']
 		account_name  = event['payload']['Name']
 		account_alias = clean_account_name(account_name)
+		report_table = get_report_table(report_type)
 		
 		print(f'Getting user list for {account_alias}({account_id})')
 		user_list = get_iam_user_list(account_id)

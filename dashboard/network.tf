@@ -22,10 +22,18 @@ resource "aws_subnet" "public" {
   cidr_block              = element(var.public_subnets, count.index)
   availability_zone       = element(var.availability_zones, count.index)
   map_public_ip_on_launch = true
+
+  tags = {
+      Name = "${var.project_name}-public-${element(var.availability_zones, count.index)}"
+  }
 }
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
+
+  tags = {
+      Name = "${var.project_name}-public"
+  }
 }
  
 resource "aws_route" "public" {
@@ -72,6 +80,10 @@ resource "aws_security_group" "alb" {
    cidr_blocks      = ["0.0.0.0/0"]
    ipv6_cidr_blocks = ["::/0"]
   }
+
+  tags = {
+      Name = "${var.project_name}-alb"
+  }
 }
 
 resource "aws_security_group" "ecs_tasks" {
@@ -93,6 +105,10 @@ resource "aws_security_group" "ecs_tasks" {
    cidr_blocks      = ["0.0.0.0/0"]
    ipv6_cidr_blocks = ["::/0"]
   }
+
+  tags = {
+      Name = "${var.project_name}-ecs-task"
+  }
 }
 
 resource "aws_security_group" "codebuild" {
@@ -106,5 +122,9 @@ resource "aws_security_group" "codebuild" {
    to_port          = 0
    cidr_blocks      = ["0.0.0.0/0"]
    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  tags = {
+      Name = "${var.project_name}-codebuild"
   }
 }

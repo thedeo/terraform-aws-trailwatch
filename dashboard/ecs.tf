@@ -20,6 +20,10 @@ resource "aws_ecs_task_definition" "main" {
         value = "${var.project_name}"
       },
       {
+        name  = "ACCOUNT_ID"
+        value = "${var.org_account_id}"
+      },
+      {
         name  = "REGION"
         value = "${var.region}"
       },
@@ -123,10 +127,21 @@ resource "aws_iam_role_policy" "ecs_task_role" {
       {
         "Effect": "Allow",
         "Resource": [
-          "arn:aws:dynamodb:${var.region}:${var.org_account_id}:table/${var.project_name}-events"
+          "arn:aws:dynamodb:${var.region}:${var.org_account_id}:table/${var.project_name}-events",
+          "arn:aws:dynamodb:${var.region}:${var.org_account_id}:table/${var.project_name}-report-*"
         ],
         "Action": [
-          "dynamodb:Scan"
+          "dynamodb:Scan",
+          "dynamodb:GetItem"
+        ]
+      },
+      {
+        "Effect": "Allow",
+        "Resource": [
+          "arn:aws:states:${var.region}:${var.org_account_id}:stateMachine:${var.project_name}-report-*"
+        ],
+        "Action": [
+          "states:ListExecutions"
         ]
       }
    ]

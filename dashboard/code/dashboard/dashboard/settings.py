@@ -25,7 +25,7 @@ from dashboard.vars import *
 BASE_DIR      = Path(__file__).resolve().parent.parent
 
 ADMIN_ENABLED = True
-DEBUG         = False
+DEBUG         = True
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
@@ -55,10 +55,10 @@ INSTALLED_APPS = [
     # 'django_auth_adfs',
     'admin.tools',
     'events',
-    # 'report.users',
-    # 'report.securitygroups',
-    # 'report.accounts',
-    # 'report.amis',
+    'report.users',
+    'report.securitygroups',
+    'report.accounts',
+    'report.amis',
     'menu.home',
     'healthcheck',
 ]
@@ -183,7 +183,7 @@ DATABASES = {
 #         'NAME': 'dashboard',
 #         'USER': 'dashboard',
 #         'PASSWORD': database_secret,
-#         'HOST': 'dashboard.cluster-cx87vtfr7up3.us-east-1.rds.amazonaws.com',
+#         'HOST': 'dashboard.cluster-xxxxxxxxxxxx.us-east-1.rds.amazonaws.com',
 #         'PORT': '3306',
 #     }
 # }
