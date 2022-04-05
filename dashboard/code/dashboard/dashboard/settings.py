@@ -25,7 +25,7 @@ from dashboard.vars import *
 BASE_DIR      = Path(__file__).resolve().parent.parent
 
 ADMIN_ENABLED = True
-DEBUG         = True
+DEBUG         = False
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/

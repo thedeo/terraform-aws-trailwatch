@@ -30,7 +30,10 @@ def get_params(request):
 
 def get_items(params):
     report_table  = get_report_table(report_type)
-    last_run_date = get_step_function_status(report_type)['stopDate'].isoformat()
+    try:    
+        last_run_date = get_step_function_status(report_type)['stopDate'].isoformat()
+    except Exception as e:
+        last_run_date = "None"
     rules = []
     try:
         session = boto3.Session(region_name=region)

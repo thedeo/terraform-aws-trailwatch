@@ -59,7 +59,8 @@ def get_step_function_status(report_type):
 			print(f'>>> Retrieved execution details for {state_machine_name}.')
 			break
 		except Exception as e:
-			retry_count = retry(e, f'Retrieve execution details for {state_machine_name}.',
-								retry_count, retry_limit)
+			print(f'Could not get last_execution for {state_machine_name}.')
+			last_execution = 'None'
+			break
 
 	return last_execution

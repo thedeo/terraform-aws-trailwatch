@@ -1,6 +1,6 @@
-# output "dashboard_url" {
-#   value = module.dashboard.dashboard_url
-# }
+output "dashboard_url" {
+  value = module.dashboard.dashboard_url
+}
 
 # output "dashboard_vpc_id" {
 #   value = module.dashboard.dashboard_vpc_id

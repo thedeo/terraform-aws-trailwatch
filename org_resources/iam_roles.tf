@@ -438,7 +438,10 @@ resource "aws_iam_role" "report_scheduled_event" {
     {
       "Action": "sts:AssumeRole",
       "Principal": {
-        "Service": "events.amazonaws.com"
+        "Service": [
+          "events.amazonaws.com",
+          "lambda.amazonaws.com"
+        ]
       },
       "Effect": "Allow",
       "Sid": ""
@@ -466,7 +469,10 @@ resource "aws_iam_role_policy" "report_scheduled_event" {
   })
 }
 
-
+resource "aws_iam_role_policy_attachment" "report_scheduled_event_AWSLambdaBasicExecutionRole" {
+  role       = aws_iam_role.report_scheduled_event.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
 
 
 

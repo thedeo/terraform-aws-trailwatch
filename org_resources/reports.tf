@@ -1,14 +1,13 @@
 ###################
 # Run Reports Once
 ###################
-resource "aws_lambda_invocation" "run_reports_once" {
-  depends_on = [aws_lambda_function.reports]
+resource "aws_lambda_invocation" "start_state_machines" {
   for_each = var.reports
 
-  function_name = aws_lambda_function.reports.function_name
+  function_name = aws_lambda_function.start_state_machines.function_name
   input = jsonencode({
     report_type = each.value
-    mode        = "bootstrap"
+    state_machine_arn = "arn:aws:states:${var.region}:${var.org_account_id}:stateMachine:${var.project_name}-report-${each.value}"
   })
 
   lifecycle {
@@ -42,6 +41,32 @@ resource "aws_lambda_function" "reports" {
       region            = "${var.region}"
       org_account_id    = "${var.org_account_id}"
       member_role_name  = "${aws_iam_role.report_automation.name}"
+    }
+  }
+}
+
+# The following will only run once during the first tf apply.
+data "archive_file" "start_state_machines" {
+  type        = "zip"
+  source_dir  = "${path.module}/lambdas/source/start_state_machines/"
+  output_path = "${path.module}/lambdas/zipped/start_state_machines.zip"
+}
+
+resource "aws_lambda_function" "start_state_machines" {
+  function_name = "${var.project_name}-start-state-machines"
+  role          = aws_iam_role.report_scheduled_event.arn
+  handler       = "lambda_function.lambda_handler"
+  timeout       = 900
+  runtime       = "python3.9"
+
+  filename         = "${data.archive_file.start_state_machines.output_path}"
+  source_code_hash = "${data.archive_file.start_state_machines.output_base64sha256}"
+
+  environment {
+    variables = {
+      project_name      = "${var.project_name}"
+      region            = "${var.region}"
+      org_account_id    = "${var.org_account_id}"
     }
   }
 }
