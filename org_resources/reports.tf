@@ -12,7 +12,8 @@ resource "aws_lambda_invocation" "start_state_machines" {
     aws_sfn_state_machine.report_ami,
     aws_sfn_state_machine.report_securitygroup,
     aws_sfn_state_machine.report_user,
-    aws_dynamodb_table.active_reports
+    aws_dynamodb_table.active_reports,
+    aws_lambda_function.reports
   ]
 
   function_name = aws_lambda_function.start_state_machines.function_name
