@@ -5,7 +5,7 @@ TrailWatch is an open source monitoring solution for AWS Organizations. Deployme
 
 The dashboard web interface uses Django along with the DataTables library to produce dynamic data views. 
 
-The dashboard provides 4 built in reports:
+The dashboard provides 4 built-in reports:
 
 1. **account**
 2. **ami**
