@@ -4,6 +4,16 @@
 resource "aws_lambda_invocation" "start_state_machines" {
   for_each = var.reports
 
+  depends_on = [
+    aws_cloudformation_stack_set.iam_roles,
+    aws_iam_role.report_automation_master,
+    aws_iam_role.report_automation,
+    aws_sfn_state_machine.report_account,
+    aws_sfn_state_machine.report_ami,
+    aws_sfn_state_machine.report_securitygroup,
+    aws_sfn_state_machine.report_user
+  ]
+
   function_name = aws_lambda_function.start_state_machines.function_name
   input = jsonencode({
     report_type = each.value
