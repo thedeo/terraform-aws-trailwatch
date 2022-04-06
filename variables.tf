@@ -1,17 +1,19 @@
-# Overall name of the project/solution used to name resources in AWS.
 variable "project_name" {
   type = string
-  default = "trailwatch"
+  description = "This will be used "
+  default = "Overall name of the project/solution used to name resources in AWS."
 }
 
 # AWS Provider Vars
 variable "region" {
   type = string
-  default = "us-east-1" # Do not change. Must be set to us-east-1 to capture global events.
+  description = "Do not change. Must be set to us-east-1 to capture global events. Changing this will break the deployment."
+  default = "us-east-1"
 }
 
 variable "profile" {
   type = string
+  description = "Name of local AWS profile that will be used to deploy resources via AWS APIs."
   default = "default"
 }
 
