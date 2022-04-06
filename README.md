@@ -56,7 +56,7 @@ Terraform variables are used to name resources and identify existing resources t
 | **project_name**  			| Used for naming throughout the project. **Default:** TrailWatch |
 | **region**  					| This solution is designed to only run in the **us-east-1** AWS region. The reason for this is because that is where all of the AWS global events are logged. You might be able to customize the solution to run in another region but it might not function as expected.  |
 | **profile** 					| You will need to make sure to reference the profile you have configured in either ~/.aws/credentials or ~/.aws/config.  **Default:** default |
-| **trusted_cidr** 				| This LIST will be used to allow access via Security Group to the dashboard web interface. Make sure to set this to a trusted network. |
+| **trusted_cidrs** 				| This LIST will be used to allow access via Security Group to the dashboard web interface. Make sure to set this to a trusted network. |
 | **dashboard_domain** 			| **Hosted Zone ID** for the dashboard. An Alias for `dashboard.example.com` will be created and pointed at the ALB. |
 | **alb_tls_cert_arn** 			| ARN of the manually created ACM certificate that for the dashboard domain. The certificate will need to be for **`dashboard.YOURDOMAIN.com`**.    |
 | **dockerhub_username** 		| Required for the CodeBuild project to sign in. This avoids the DockerHub rate limit.|
@@ -79,7 +79,7 @@ You will notice that the **org_cf_stacks.tf** and **member_cf_stacks.tf** take s
 
 # Security Considerations
 
-None of the information processed or stored by this solution would be considered particularly sensitive. However, I recommend that when deploying the solution you limit network access to the dashboard only to trusted networks. Make sure you update the Terraform variable named **trusted_cidr**.
+None of the information processed or stored by this solution would be considered particularly sensitive. However, I recommend that when deploying the solution you limit network access to the dashboard only to trusted networks. Make sure you update the Terraform variable named **trusted_cidrs**.
 
 The dashboard has functionality to support ADFS SAML authentication but since this is just a POC that functionality is disabled by default in Django. The **django-auth-adfs** libraries are commented out. If you want to use the built in Django admin console you will need to uncomment the path for 'admin/' in urls.py. If you decide to enable the admin URI, you can hit the admin by just typing in **/admin/** to the end of your domain. Make sure to include the trailing slash.
 

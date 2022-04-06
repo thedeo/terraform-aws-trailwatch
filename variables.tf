@@ -18,9 +18,9 @@ variable "profile" {
 }
 
 # Dashboard Settings
-variable "trusted_cidr" {
-  type = string
-  description = "WARNING: Used to allow network access via Security Group to dashboard web interface. Only allow trusted networks. Example: 42.42.42.0/24"
+variable "trusted_cidrs" {
+  type = list
+  description = "WARNING: List used to allow network access via Security Group to dashboard web interface. Only allow trusted networks. Example: 42.42.42.0/24"
 }
 
 variable "dashboard_domain" {

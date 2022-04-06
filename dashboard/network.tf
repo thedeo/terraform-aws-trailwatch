@@ -61,7 +61,7 @@ resource "aws_security_group" "alb" {
    protocol         = "tcp"
    from_port        = 80
    to_port          = 80
-   cidr_blocks      = var.trusted_cidr
+   cidr_blocks      = var.trusted_cidrs
    # ipv6_cidr_blocks = ["::/0"]
   }
  
@@ -69,7 +69,7 @@ resource "aws_security_group" "alb" {
    protocol         = "tcp"
    from_port        = 443
    to_port          = 443
-   cidr_blocks      = var.trusted_cidr
+   cidr_blocks      = var.trusted_cidrs
    # ipv6_cidr_blocks = ["::/0"]
   }
  
