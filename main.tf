@@ -50,7 +50,7 @@ module "dashboard" {
   project_name        = var.project_name
   region              = var.region
   alb_tls_cert_arn    = var.alb_tls_cert_arn
-  trusted_cidrs       = var.trusted_cidrs
+  trusted_cidr       = var.trusted_cidr
   dashboard_domain    = var.dashboard_domain
   dockerhub_username  = var.dockerhub_username
   dockerhub_password  = var.dockerhub_password

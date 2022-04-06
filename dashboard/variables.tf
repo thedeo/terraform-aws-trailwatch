@@ -2,7 +2,7 @@ variable "project_name" {}
 variable "region" {}
 variable "org_account_id" {}
 variable "alb_tls_cert_arn" {}
-variable "trusted_cidrs" {}
+variable "trusted_cidr" {}
 variable "dashboard_domain" {}
 variable "dockerhub_username" {}
 variable "dockerhub_password" {}
