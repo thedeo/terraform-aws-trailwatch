@@ -8,6 +8,7 @@ resource "aws_lambda_invocation" "start_state_machines" {
     aws_cloudformation_stack_set.iam_roles,
     aws_iam_role.report_automation_master,
     aws_iam_role.report_automation,
+    aws_iam_role.report_states,
     aws_sfn_state_machine.report_account,
     aws_sfn_state_machine.report_ami,
     aws_sfn_state_machine.report_securitygroup,
