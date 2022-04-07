@@ -271,15 +271,8 @@ resource "aws_iam_role" "eventbridge_lambda" {
 }
 DOC
 }
+
 data "aws_iam_policy_document" "eventbridge_lambda" {
-  statement {
-    actions = [
-      "iam:PassRole"
-    ]
-    resources = [
-      "*"
-    ]
-  }
   statement {
     # Allow EventBridge to invoke lambda parse
     actions = [
@@ -290,10 +283,12 @@ data "aws_iam_policy_document" "eventbridge_lambda" {
     ]
   }
 }
+
 resource "aws_iam_policy" "eventbridge_lambda" {
   name = "${var.project_name}-eventbridge-lambda"
   policy = data.aws_iam_policy_document.eventbridge_lambda.json
 }
+
 resource "aws_iam_role_policy_attachment" "eventbridge_lambda" {
   policy_arn = aws_iam_policy.eventbridge_lambda.arn
   role = aws_iam_role.eventbridge_lambda.name
