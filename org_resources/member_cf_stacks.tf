@@ -1,3 +1,36 @@
+resource "aws_cloudformation_stack_set_instance" "iam_roles" {
+  deployment_targets {
+    organizational_unit_ids = [var.org_root_id]
+  }
+
+  region         = "us-east-1"
+  stack_set_name = aws_cloudformation_stack_set.iam_roles.name
+}
+
+resource "aws_cloudformation_stack_set_instance" "global_resources" {
+  depends_on     = [aws_cloudformation_stack_set_instance.iam_roles]
+
+  deployment_targets {
+    organizational_unit_ids = [var.org_root_id]
+  }
+
+  region         = "us-east-1"
+  stack_set_name = aws_cloudformation_stack_set.global_resources.name
+}
+
+resource "aws_cloudformation_stack_set_instance" "regional_resources" {
+  depends_on     = [aws_cloudformation_stack_set_instance.iam_roles]
+  for_each       = var.available_regions
+
+  deployment_targets {
+    organizational_unit_ids = [var.org_root_id]
+  }
+
+  region         = each.key
+  stack_set_name = aws_cloudformation_stack_set.regional_resources.name
+}
+
+
 resource "aws_cloudformation_stack_set" "iam_roles" {
   name                    = "${var.project_name}-iam-roles"
   description             = "IAM roles for the ${var.project_name} event monitor."
@@ -411,36 +444,4 @@ resource "aws_cloudformation_stack_set" "regional_resources" {
   }
 }
 TEMPLATE
-}
-
-resource "aws_cloudformation_stack_set_instance" "iam_roles" {
-  deployment_targets {
-    organizational_unit_ids = [var.org_root_id]
-  }
-
-  region         = "us-east-1"
-  stack_set_name = aws_cloudformation_stack_set.iam_roles.name
-}
-
-resource "aws_cloudformation_stack_set_instance" "global_resources" {
-  depends_on     = [aws_cloudformation_stack_set_instance.iam_roles]
-
-  deployment_targets {
-    organizational_unit_ids = [var.org_root_id]
-  }
-
-  region         = "us-east-1"
-  stack_set_name = aws_cloudformation_stack_set.global_resources.name
-}
-
-resource "aws_cloudformation_stack_set_instance" "regional_resources" {
-  depends_on     = [aws_cloudformation_stack_set_instance.iam_roles]
-  for_each       = var.available_regions
-
-  deployment_targets {
-    organizational_unit_ids = [var.org_root_id]
-  }
-
-  region         = each.key
-  stack_set_name = aws_cloudformation_stack_set.regional_resources.name
 }
