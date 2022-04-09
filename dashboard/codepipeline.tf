@@ -154,7 +154,7 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
         "codebuild:BatchGetBuilds",
         "codebuild:StartBuild"
       ],
-      "Resource": "*"
+      "Resource": "${aws_codebuild_project.project.arn}"
     },
     {
       "Action": "ecs:*",
@@ -162,15 +162,21 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
       "Effect": "Allow"
     },
     {
-      "Action": [
-        "iam:PassRole"
-      ],
-      "Resource": [
-        "${aws_iam_role.ecs_task_role.arn}",
-        "${aws_iam_role.ecs_task_execution_role.arn}",
-        "*"
-      ],
-      "Effect": "Allow"
+        "Action": [
+            "iam:PassRole"
+        ],
+        "Resource": [
+            "${aws_iam_role.ecs_task_role.arn}",
+            "${aws_iam_role.ecs_task_execution_role.arn}"
+          ],
+        "Effect": "Allow",
+        "Condition": {
+            "StringEquals": {
+                "iam:PassedToService": [
+                    "ecs-tasks.amazonaws.com"
+                ]
+            }
+        }
     }
   ]
 }
@@ -203,9 +209,18 @@ data "aws_iam_policy_document" "eventbridge_codepipeline" {
       "iam:PassRole"
     ]
     resources = [
-      "*"
+      "${aws_iam_role.codepipeline_role.arn}"
     ]
+    condition {
+      test     = "StringEquals"
+      variable = "iam:PassedToService"
+
+      values = [
+        "codepipeline.amazonaws.com"
+      ]
+    }
   }
+
   statement {
     # Allow EventBridge to start the Pipeline
     actions = [
