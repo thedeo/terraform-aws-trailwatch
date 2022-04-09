@@ -237,7 +237,7 @@ resource "aws_iam_role_policy" "email_summary" {
         ]
         Effect   = "Allow"
         Resource = [
-                "*" # you may want to limit this if you have multiple domains
+                "${var.ses_identity_arn}"
             ]
       },
     ]
