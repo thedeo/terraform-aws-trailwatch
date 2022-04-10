@@ -166,15 +166,20 @@ resource "aws_iam_role_policy" "event_parse" {
     Statement = [
       {
         Action = [
-          "ses:SendEmail",
           "dynamodb:PutItem",
           "dynamodb:GetItem"
         ]
         Effect   = "Allow"
         Resource = [
-                "${var.ses_identity_arn}",
                 "arn:aws:dynamodb:us-east-1:${var.org_account_id}:table/${var.project_name}-events"
             ]
+      },
+      {
+        Action = [
+          "ses:SendEmail"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
       },
       {
         Action = [
