@@ -323,14 +323,16 @@ def parse_event(event):
 	################################################################################################
 	# Convert policy documents from strings to dictionaries
 	################################################################################################
-	document_types = ['assumeRolePolicyDocument', 'policyDocument', 'document']
+	document_types        = ['assumeRolePolicyDocument', 'policyDocument', 'document']
+	raw_request_params    = event.get('detail', {}).get('requestParameters', {})
+	raw_response_elements = event.get('detail', {}).get('responseElements', {})
 	# Request Params
-	if event.get('detail', {}).get('requestParameters', {}) != None:
+	if raw_request_params != "None" and raw_request_params != None:
 		for t in document_types:
 		    if event.get('detail', {}).get('requestParameters', {}).get(t, {}):
 		        event['detail']['requestParameters'][t] = json.loads(event['detail']['requestParameters'][t])
 	# Response Elements
-	if event.get('detail', {}).get('responseElements', {}) != None:
+	if raw_response_elements != "None" and raw_response_elements != None:
 		for t in document_types:
 		    if event.get('detail', {}).get('responseElements', {}).get('policyVersion', {}).get(t, {}):
 		        event['detail']['responseElements']['policyVersion'][t] = json.loads(event['detail']['responseElements']['policyVersion'][t])
