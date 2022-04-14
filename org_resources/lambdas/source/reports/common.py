@@ -72,6 +72,43 @@ def create_client(account_id, region, service):
 
 	return client
 
+def verify_member_role_access(account_id, region, service):
+	retry_limit = 1
+	retries = 0
+	while True:
+		try:
+			sts_connection = boto3.client('sts')
+			external_account = sts_connection.assume_role(
+				RoleArn=f"arn:aws:iam::{account_id}:role/{member_role_name}",
+				RoleSessionName=session_name
+			)
+			
+			ACCESS_KEY = external_account['Credentials']['AccessKeyId']
+			SECRET_KEY = external_account['Credentials']['SecretAccessKey']
+			SESSION_TOKEN = external_account['Credentials']['SessionToken']
+			
+			# create service client using the assumed role credentials, e.g. S3
+			client = boto3.client(
+				service,
+				aws_access_key_id=ACCESS_KEY,
+				aws_secret_access_key=SECRET_KEY,
+				aws_session_token=SESSION_TOKEN,
+				region_name=region
+			)
+			access_verified = True
+			break
+		except Exception as e:
+			print(f'Error creating {service} client  -- {account_id}')
+			print(e)
+			retries += 1
+			if retries >= retry_limit:
+				print(f'Retry limit of {retry_limit} attempts reached. Skipping {account_id}...')
+				access_verified = False
+				break
+			sleep(2)
+
+	return access_verified
+
 ################################################################################################
 # Get available regions for account
 ################################################################################################

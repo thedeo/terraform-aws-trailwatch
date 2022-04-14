@@ -9,6 +9,7 @@ from common import clean_account_name
 from common import create_report_table
 from common import swap_report_table
 from common import get_report_table
+from common import verify_member_role_access
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -302,9 +303,19 @@ def start(event):
 		account_id 	  = event['payload']['Id']
 		account_name  = event['payload']['Name']
 		account_alias = clean_account_name(account_name)
-		
-		print(f'Getting region list for {account_alias}({account_id})')
-		region_list = get_available_regions(account_id)
+
+		# Verify that role exists in member account before attempting to pull data.
+		# if we can't access this account we will pass an empty list for 'region_list'
+		# which will cause no further logic to run for this account.
+		# This will ensure that the state machine doesn't fail if a newly added account
+		# doesn't yet have the proper IAM roles to allow for analysis.
+		access_verified = verify_member_role_access(account_id, 'us-east-1', 'ec2')
+		if not access_verified:
+			print(f'Cannot assume role for {account_alias}({account_id}). Skipping...')
+			region_list = []
+		else:
+			print(f'Getting region list for {account_alias}({account_id})')
+			region_list = get_available_regions(account_id)
 
 		return {
 			'statusCode':    200,

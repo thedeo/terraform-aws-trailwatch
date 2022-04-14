@@ -8,6 +8,7 @@ from common import clean_account_name
 from common import create_report_table
 from common import swap_report_table
 from common import get_report_table
+from common import verify_member_role_access
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -25,6 +26,16 @@ dynamodb = boto3.client('dynamodb', region_name='us-east-1')
 # Get Service Usage from Cost Explorer
 ################################################################################################
 def get_service_usage(account_id, account_alias):
+
+	# Verify that role exists in member account before attempting to pull data.
+	# if we can't access this account we will mark the service usage field as 'AccessDenied'
+	# which will cause no further logic to run for this account.
+	# This will ensure that the state machine doesn't fail if a newly added account
+	# doesn't yet have the proper IAM roles to allow for analysis.
+	access_verified = verify_member_role_access(account_id, 'us-east-1', 'ce')
+	if not access_verified:
+		print(f'Could not get service usage for {account_id}({account_alias})')
+		return 'AccessDenied'
 
 	ce = create_client(account_id, 'us-east-1', 'ce')
 

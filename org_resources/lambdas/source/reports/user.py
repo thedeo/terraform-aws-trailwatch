@@ -13,6 +13,7 @@ from common import clean_account_name
 from common import create_report_table
 from common import swap_report_table
 from common import get_report_table
+from common import verify_member_role_access
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -980,12 +981,22 @@ def start(event):
 		account_name  = event['payload']['Name']
 		account_alias = clean_account_name(account_name)
 		report_table = get_report_table(report_type)
-		
-		print(f'Getting user list for {account_alias}({account_id})')
-		user_list = get_iam_user_list(account_id)
-		
-		print(f'Distributing {len(user_list)} users among sub functions...')
-		user_lists = list(divide_list(user_list, 50))
+
+		# Verify that role exists in member account before attempting to pull data.
+		# if we can't access this account we will pass an empty list for 'user_lists'
+		# which will cause no further logic to run for this account.
+		# This will ensure that the state machine doesn't fail if a newly added account
+		# doesn't yet have the proper IAM roles to allow for analysis.
+		access_verified = verify_member_role_access(account_id, 'us-east-1', 'iam')
+		if not access_verified:
+			print(f'Cannot assume role for {account_alias}({account_id}). Skipping...')
+			user_lists = []
+		else:	
+			print(f'Getting user list for {account_alias}({account_id})')
+			user_list = get_iam_user_list(account_id)
+			
+			print(f'Distributing {len(user_list)} users among sub functions...')
+			user_lists = list(divide_list(user_list, 50))
 
 		return {
 			'statusCode':    200,
