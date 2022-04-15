@@ -1,4 +1,5 @@
 import boto3
+import json
 import logging
 import datetime
 
@@ -134,14 +135,6 @@ def get_service_usage(account_id, account_alias):
 						'OpenVPN Access Server (100 Connected Devices)',
 						'bucketAV - Antivirus for Amazon S3 - previously VirusScan for Amazon S3' ]
 
-	# Add to list unless ignored or if usage is too low.
-	service_list = []
-	for service in cost_and_usage:
-		service_name = service['Keys'][0]
-		service_cost = int(float(service['Metrics']['BlendedCost']['Amount']))
-		if service_cost > 1 and service_name not in ignored_services:
-			service_list.append(service_name)
-
 	service_short_name_mapping = {
 	'Amazon Registrar': 'registrar',
 	'AWS CloudHSM': 'cloudhsm',
@@ -214,27 +207,48 @@ def get_service_usage(account_id, account_alias):
 	'CodeBuild': 'codebuild'
 	}
 
+	# Add to list unless ignored or over 0.01 of currency.
+	service_list = []
+	cost_by_service = {}
+	total_account_cost = 0
+	for service in cost_and_usage:
+		service_name  = service['Keys'][0]
+		short_name    = service_short_name_mapping.get(service_name, service_name)
+		currency_unit = service['Metrics']['BlendedCost']['Unit']
+		service_cost  = float(service['Metrics']['BlendedCost']['Amount'])
+		total_account_cost += service_cost
+		if service_cost > 0.01 and service_name not in ignored_services:
+			service_list.append(service_name)
+
+			# Either create new entry or add value to existing.
+			if not cost_by_service.get(short_name, ''):
+				cost_by_service[short_name] = service_cost
+			else:
+				cost_by_service[short_name] = cost_by_service[short_name] + service_cost
+
+	total_account_cost = f'{total_account_cost:,.2f} {currency_unit}'
+
 	# Use mapping to short names
 	service_short_name_list = []
-	for service in service_list:
-		short_name = service_short_name_mapping.get(service, service)
+	for service_name in service_list:
+		short_name = service_short_name_mapping.get(service_name, service_name)
 		service_short_name_list.append(short_name)
 
 	# Remove repeats and sort
-	service_short_name_set = set(service_short_name_list)
+	service_short_name_set  = set(service_short_name_list)
 	service_short_name_list = list(service_short_name_set)
 	service_short_name_list.sort()
 
 	# Turn into string
 	services_used = ", ".join(service_short_name_list)
 
-	return services_used
+	return services_used, cost_by_service, total_account_cost
 
 
 ################################################################################################
 # Process Data
 ################################################################################################
-def analyze_data(account_id, account_alias, event, services_used):
+def analyze_data(account_id, account_alias, event, services_used, cost_by_service, total_account_cost):
 
 	processed_data_list = []
 	########################
@@ -248,6 +262,8 @@ def analyze_data(account_id, account_alias, event, services_used):
 	item.setdefault('joined_method', {})['S'] = event['payload']['JoinedMethod']
 	item.setdefault('joined_date', {})['S'] = event['payload']['JoinedTimestamp']
 	item.setdefault('services_used', {})['S'] = services_used if services_used else '-' # if services_used is empty set to '-'
+	item.setdefault('cost_by_service', {})['S'] = json.dumps(cost_by_service)
+	item.setdefault('total_account_cost', {})['S'] = total_account_cost
 	processed_data_list.append({"PutRequest": {"Item": item}})
 
 	return processed_data_list
@@ -321,10 +337,10 @@ def start(event):
 		account_id 	  = event['payload']['Id']
 		account_name  = event['payload']['Name']
 		account_alias = clean_account_name(account_name)
-		services_used = get_service_usage(account_id, account_alias)
+		services_used, cost_by_service, total_account_cost = get_service_usage(account_id, account_alias)
 
 		print(f'Analizing data for {account_id}({account_alias})...')
-		processed_data_list = analyze_data(account_id, account_alias, event, services_used)
+		processed_data_list = analyze_data(account_id, account_alias, event, services_used, cost_by_service, total_account_cost)
 
 		print(f'Sending data for {account_alias}({account_id}) to DynamoDB...')
 		report_table = get_report_table(report_type)
