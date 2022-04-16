@@ -115,15 +115,7 @@ def get_service_usage(account_id, account_alias):
 				print(e)
 				exit(1)
 
-	ignored_services = ['AWS CloudTrail', 
-						'AWS Config', 
-						'AWS Systems Manager',
-						'Amazon GuardDuty',
-						'AmazonCloudWatch',
-						'CloudWatch Events',
-						'Tax',
-						'AWS Support (Business)',
-						'AWS Support (Developer)',
+	ignored_services = ['Tax',
 						'VM-Series Next-Generation Firewall Bundle 1 [VM-300]',
 						'Trend Micro Cloud One',
 						'The Things Stack AWS Launcher for LoRaWAN',
@@ -136,6 +128,9 @@ def get_service_usage(account_id, account_alias):
 						'bucketAV - Antivirus for Amazon S3 - previously VirusScan for Amazon S3' ]
 
 	service_short_name_mapping = {
+	'AWS Support (Business)': 'support-bus',
+	'AWS Support (Developer)': 'support-dev',
+	'AWS Support (Enterprise)': 'support-ent',
 	'Amazon Registrar': 'registrar',
 	'AWS CloudHSM': 'cloudhsm',
 	'AWS CloudTrail': 'cloudtrail',
@@ -210,13 +205,15 @@ def get_service_usage(account_id, account_alias):
 	# Add to list unless ignored or over 0.01 of currency.
 	service_list = []
 	cost_by_service = {}
-	total_account_cost = 0
+	currency_unit_by_service = {}
+	total_account_cost = {}
 	for service in cost_and_usage:
 		service_name  = service['Keys'][0]
 		short_name    = service_short_name_mapping.get(service_name, service_name)
 		currency_unit = service['Metrics']['BlendedCost']['Unit']
 		service_cost  = float(service['Metrics']['BlendedCost']['Amount'])
-		total_account_cost += service_cost
+		total_account_cost.setdefault(currency_unit, 0.00)
+		total_account_cost[currency_unit] += service_cost
 		if service_cost > 0.01 and service_name not in ignored_services:
 			service_list.append(service_name)
 
@@ -226,7 +223,16 @@ def get_service_usage(account_id, account_alias):
 			else:
 				cost_by_service[short_name] = cost_by_service[short_name] + service_cost
 
-	total_account_cost = f'{total_account_cost:,.2f} {currency_unit}'
+			# Create entry if it doesn't exist
+			if not currency_unit_by_service.get(short_name, ''):
+				currency_unit_by_service[short_name] = currency_unit
+
+	# Create a string of all currency totals
+	total_account_cost_list   = []
+	total_account_cost_string = ''
+	for k, v in total_account_cost.items():
+		total_account_cost_list.append(f'{v:,.2f} {k}')
+	total_account_cost_string = ", ".join(total_account_cost_list)
 
 	# Use mapping to short names
 	service_short_name_list = []
@@ -242,13 +248,13 @@ def get_service_usage(account_id, account_alias):
 	# Turn into string
 	services_used = ", ".join(service_short_name_list)
 
-	return services_used, cost_by_service, total_account_cost
+	return services_used, cost_by_service, currency_unit_by_service, total_account_cost_string
 
 
 ################################################################################################
 # Process Data
 ################################################################################################
-def analyze_data(account_id, account_alias, event, services_used, cost_by_service, total_account_cost):
+def analyze_data(account_id, account_alias, event, services_used, cost_by_service, currency_unit_by_service, total_account_cost):
 
 	processed_data_list = []
 	########################
@@ -263,6 +269,7 @@ def analyze_data(account_id, account_alias, event, services_used, cost_by_servic
 	item.setdefault('joined_date', {})['S'] = event['payload']['JoinedTimestamp']
 	item.setdefault('services_used', {})['S'] = services_used if services_used else '-' # if services_used is empty set to '-'
 	item.setdefault('cost_by_service', {})['S'] = json.dumps(cost_by_service)
+	item.setdefault('currency_unit_by_service', {})['S'] = json.dumps(currency_unit_by_service)
 	item.setdefault('total_account_cost', {})['S'] = total_account_cost
 	processed_data_list.append({"PutRequest": {"Item": item}})
 
@@ -337,10 +344,10 @@ def start(event):
 		account_id 	  = event['payload']['Id']
 		account_name  = event['payload']['Name']
 		account_alias = clean_account_name(account_name)
-		services_used, cost_by_service, total_account_cost = get_service_usage(account_id, account_alias)
+		services_used, cost_by_service, currency_unit_by_service, total_account_cost = get_service_usage(account_id, account_alias)
 
 		print(f'Analizing data for {account_id}({account_alias})...')
-		processed_data_list = analyze_data(account_id, account_alias, event, services_used, cost_by_service, total_account_cost)
+		processed_data_list = analyze_data(account_id, account_alias, event, services_used, cost_by_service, currency_unit_by_service, total_account_cost)
 
 		print(f'Sending data for {account_alias}({account_id}) to DynamoDB...')
 		report_table = get_report_table(report_type)

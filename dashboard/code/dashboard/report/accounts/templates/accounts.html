@@ -5,16 +5,20 @@
 
 {% block content %}
 <br><br>
+
 <div class="tablediv">
 <div class="pagetitle">AWS Account Report</div>
 <div>Last run: {{ last_run_date }}</div>
 <div>
 <br>
-Toggle: <a class="toggle-vis" data-column="2" style="color: #5da3d9;">BillingName</a> - <a class="toggle-vis" data-column="6" style="color: #5da3d9;">ServicesUsed</a>
+Toggle: <a class="toggle-vis" data-column="3" style="color: #5da3d9;">BillingName</a> - <a class="toggle-vis" data-column="7" style="color: #5da3d9;">ServicesUsed</a>
+<br><br>
+Cost data does not include tax and may not reflect all third party charges. Amounts reflect the previous month's totals.
 </div>
 <table id="accounts_table" class="display" style="width:100%">
     <thead>
         <tr>
+            <th></th>
             <th>AccountId</th>
             <th>Alias</th>
             <th>BillingName</th>
@@ -22,6 +26,7 @@ Toggle: <a class="toggle-vis" data-column="2" style="color: #5da3d9;">BillingNam
             <th>JoinMethod</th>
             <th>JoinDate</th>
             <th>ServicesUsed</th>
+            <th>Cost</th>
         </tr>
     </thead>
 </table>
@@ -37,6 +42,45 @@ Toggle: <a class="toggle-vis" data-column="2" style="color: #5da3d9;">BillingNam
 <script type="text/javascript" src="https://{{ static_files_domain }}/static/js/dataTables.buttons.min.js"></script>
 <script type="text/javascript" src="https://{{ static_files_domain }}/static/js/buttons.html5.min.js"></script>
 <script>
+/* Formatting function for row details - modify as you need */
+function format ( d ) {
+    // `d` is the original data object for the row
+
+    const cost_by_service          = JSON.parse(d.cost_by_service);
+    const currency_unit_by_service = JSON.parse(d.currency_unit_by_service);
+
+    function format_num ( num ) {
+        return num.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })
+    }
+
+    makeTag=function(openTag, closeTag){
+                return function(content){
+                    return openTag+content+closeTag;  
+                };
+            };
+
+    var td=makeTag("<td>","</td>");
+    var tr=makeTag("<tr>","</tr>");
+
+    function generateTable(data){
+        return tr(
+            td("<strong>Service</strong>")+
+            td("<strong>Cost</strong>")
+        )+
+        Object.keys(data).reduce(function(o,n){
+            return o+tr(
+                td(n)+""+
+                td(format_num(data[n])+" "+currency_unit_by_service[n]+"")
+            );
+        },"")
+    };
+
+    return generateTable(cost_by_service);
+}
+
 $(document).ready(function() {
     var table = $('#accounts_table').DataTable( {
         dom: 'QlfrtBip',
@@ -54,15 +98,21 @@ $(document).ready(function() {
                 }
             }
         ],
-        "pageLength": 100,
+        "pageLength": 10,
         "data": tdata,
         "columnDefs": [
             {
-                "targets": [ 2 ],
+                "targets": [ 3 ],
                 "visible": false
             }
         ],
         "columns": [
+            {
+                "className":      'details-control',
+                "orderable":      false,
+                "data":           null,
+                "defaultContent": ''
+            },
             { "data": "account_id" },
             { "data": "account_alias" },
             { "data": "billing_name" },
@@ -70,6 +120,7 @@ $(document).ready(function() {
             { "data": "joined_method" },
             { "data": "joined_date" },
             { "data": "services_used" },
+            { "data": "total_account_cost" }
         ],
         "order": [[1, 'asc']]
     } );
@@ -82,6 +133,23 @@ $(document).ready(function() {
  
         // Toggle the visibility
         column.visible( ! column.visible() );
+    } );
+     
+    // Add event listener for opening and closing details
+    $('#accounts_table tbody').on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var row = table.row( tr );
+ 
+        if ( row.child.isShown() ) {
+            // This row is already open - close it
+            row.child.hide();
+            tr.removeClass('shown');
+        }
+        else {
+            // Open this row
+            row.child( format(row.data()) ).show();
+            tr.addClass('shown');
+        }
     } );
 } );
 </script>
