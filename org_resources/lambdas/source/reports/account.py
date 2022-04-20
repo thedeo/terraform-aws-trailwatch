@@ -36,14 +36,25 @@ def get_service_usage(account_id, account_alias):
 	access_verified = verify_member_role_access(account_id, 'us-east-1', 'ce')
 	if not access_verified:
 		print(f'Could not get service usage for {account_id}({account_alias})')
-		return 'AccessDenied'
+		return 'AccessDenied', {}, {}, '-'
 
 	ce = create_client(account_id, 'us-east-1', 'ce')
 
-	# Determine dates for this month and one month ago.
+
+	# Generate date ranges for current and previous month.
+	date_ranges = []
+
+	# Current Month Date Range
 	first_of_month = datetime.date.today().replace(day=1)
+	today          = datetime.date.today()
+	start          = first_of_month.strftime("%Y-%m-%d")
+	end            = today.strftime("%Y-%m-%d")
+
+	date_ranges.append({'date_range_name': 'current_month', 'start': start, 'end': end})
+
+	# Previous Month Date Range
 	month = int(first_of_month.strftime("%m"))
-	year = int(first_of_month.strftime("%Y"))
+	year  = int(first_of_month.strftime("%Y"))
 	if month == 1:
 		previous_month = 12
 		year -= 1
@@ -52,209 +63,225 @@ def get_service_usage(account_id, account_alias):
 	one_month_ago = first_of_month.replace(year=year,month=previous_month,day=1)
 
 	start = one_month_ago.strftime("%Y-%m-%d")
-	end = first_of_month.strftime("%Y-%m-%d")
+	end   = first_of_month.strftime("%Y-%m-%d")
 
-	cost_and_usage = []
-	# Get list of all items in paginated list
-	next_token = False
-	while True:
-		if not next_token:
-			try:
-				response = ce.get_cost_and_usage(
-					TimePeriod={
-						'Start': start,
-						'End': end
-					},
-					Granularity='MONTHLY',
-					Metrics=[
-						'BlendedCost',
-					],
-					GroupBy=[
-						{
-							'Type': 'DIMENSION',
-							'Key': 'SERVICE'
+	date_ranges.append({'date_range_name': 'previous_month', 'start': start, 'end': end})
+
+	# Retrieve data and place into dict.
+	cost_data = {}
+	for date_range in date_ranges:
+		date_range_name = date_range['date_range_name']
+		start 			= date_range['start']
+		end   			= date_range['end']
+
+		cost_and_usage = []
+		# Get list of all items in paginated list
+		next_token = False
+		while True:
+			if not next_token:
+				try:
+					response = ce.get_cost_and_usage(
+						TimePeriod={
+							'Start': start,
+							'End':   end
 						},
-					]
-				)
-				cost_and_usage = cost_and_usage + response['ResultsByTime'][0]['Groups']
-				if response.get('NextPageToken', ''):
-					next_token = True
-					token = response['NextPageToken']
+						Granularity='MONTHLY',
+						Metrics=[
+							'BlendedCost',
+						],
+						GroupBy=[
+							{
+								'Type': 'DIMENSION',
+								'Key': 'SERVICE'
+							},
+						]
+					)
+					cost_and_usage = cost_and_usage + response['ResultsByTime'][0]['Groups']
+					if response.get('NextPageToken', ''):
+						next_token = True
+						token = response['NextPageToken']
+					else:
+						break # no more items left to list
+				except Exception as e:
+					print(e)
+					exit(1)
+
+			elif next_token:
+				try:
+					response = ce.get_cost_and_usage(
+						TimePeriod={
+							'Start': start,
+							'End':   end
+						},
+						Granularity='MONTHLY',
+						Metrics=[
+							'BlendedCost',
+						],
+						GroupBy=[
+							{
+								'Type': 'DIMENSION',
+								'Key': 'SERVICE'
+							},
+						],
+						NextPageToken=token
+					)
+					cost_and_usage = cost_and_usage + response['ResultsByTime'][0]['Groups']
+					if response.get('NextPageToken', ''):
+						next_token = True
+						token = response['NextPageToken']
+					else:
+						break # no more items left to list
+				except Exception as e:
+					print(e)
+					exit(1)
+
+		ignored_services = ['Tax',
+							'VM-Series Next-Generation Firewall Bundle 1 [VM-300]',
+							'Trend Micro Cloud One',
+							'The Things Stack AWS Launcher for LoRaWAN',
+							'Savings Plans for AWS Compute usage',
+							'OpenVPN Access Server (10 Connected Devices)',
+							'JPEGmini Photo Server',
+							'Fortinet Managed Rules for AWS WAF - Complete OWASP Top 10',
+							'Contact Center Telecommunications (service sold by AMCS, LLC) ',
+							'OpenVPN Access Server (100 Connected Devices)',
+							'bucketAV - Antivirus for Amazon S3 - previously VirusScan for Amazon S3' ]
+
+		service_short_name_mapping = {
+		'AWS Support (Business)': 'support-bus',
+		'AWS Support (Developer)': 'support-dev',
+		'AWS Support (Enterprise)': 'support-ent',
+		'Amazon Registrar': 'registrar',
+		'AWS CloudHSM': 'cloudhsm',
+		'AWS CloudTrail': 'cloudtrail',
+		'AWS Config': 'config',
+		'AWS Systems Manager': 'ssm',
+		'Amazon GuardDuty': 'guardduty',
+		'AmazonCloudWatch': 'cw',
+		'CloudWatch Events': 'cw events',
+		'AWS Backup': 'backup',
+		'AWS Cloud Map': 'cloudmap',
+		'AWS CloudShell': 'cloudshell',
+		'AWS CodeArtifact': 'codeartifact',
+		'AWS CodeCommit': 'codecommit',
+		'AWS CodePipeline': 'codepipeline',
+		'AWS Cost Explorer': 'costexplorer',
+		'AWS Data Pipeline': 'datapipeline',
+		'AWS DataSync': 'datasync',
+		'AWS Database Migration Service': 'dms',
+		'AWS Direct Connect': 'directconnect',
+		'AWS Directory Service': 'directory',
+		'AWS Elemental MediaStore': 'elemental',
+		'AWS Global Accelerator': 'accelerator',
+		'AWS Glue': 'glue',
+		'AWS IoT': 'iot',
+		'AWS Key Management Service': 'kms',
+		'AWS Lambda': 'lambda',
+		'AWS Secrets Manager': 'secrets',
+		'AWS Security Hub': 'sechub',
+		'AWS Step Functions': 'stepfunctions',
+		'AWS WAF': 'waf',
+		'AWS X-Ray': 'xray',
+		'Amazon API Gateway': 'apigateway',
+		'Amazon Athena': 'athena',
+		'Amazon CloudFront': 'cloudfront',
+		'Amazon Cognito': 'cognito',
+		'Amazon Connect': 'connect',
+		'Amazon Detective': 'detective',
+		'Amazon DynamoDB': 'dynamodb',
+		'Amazon EC2 Container Registry (ECR)': 'ecr',
+		'Amazon ElastiCache': 'ecache',
+		'EC2 - Other': 'ec2',
+		'Amazon Elastic Compute Cloud - Compute': 'ec2',
+		'Amazon Elastic Container Service': 'ecs',
+		'Amazon Elastic Container Service for Kubernetes': 'eks',
+		'Amazon Elastic File System': 'efs',
+		'Amazon Elastic Load Balancing': 'elb',
+		'Amazon Elasticsearch Service': 'elasticsearch',
+		'Amazon FSx': 'fsx',
+		'Amazon Glacier': 'glacier',
+		'Amazon Inspector': 'inspector',
+		'Amazon Kinesis': 'kinesis',
+		'Amazon Kinesis Firehose': 'firehose',
+		'Amazon Polly': 'polly',
+		'Amazon Quantum Ledger Database': 'qldb',
+		'Amazon QuickSight': 'quicksight',
+		'Amazon Redshift': 'redshift',
+		'Amazon Relational Database Service': 'rds',
+		'Amazon Route 53': 'r53',
+		'Amazon SageMaker': 'sagemaker',
+		'Amazon Simple Email Service': 'ses',
+		'Amazon Simple Notification Service': 'sns',
+		'Amazon Simple Queue Service': 'sqs',
+		'Amazon Simple Storage Service': 's3',
+		'Amazon SimpleDB': 'simpledb',
+		'Amazon Textract': 'textract',
+		'Amazon Virtual Private Cloud': 'vpc',
+		'Amazon WorkDocs': 'workdocs',
+		'Amazon WorkSpaces': 'workspaces',
+		'CodeBuild': 'codebuild'
+		}
+
+		# Add to list unless ignored or over 0.01 of currency.
+		service_list = []
+		cost_by_service = {}
+		currency_unit_by_service = {}
+		total_account_cost = {}
+		for service in cost_and_usage:
+			service_name  = service['Keys'][0]
+			short_name    = service_short_name_mapping.get(service_name, service_name)
+			currency_unit = service['Metrics']['BlendedCost']['Unit']
+			service_cost  = float(service['Metrics']['BlendedCost']['Amount'])
+			total_account_cost.setdefault(currency_unit, 0.00)
+			total_account_cost[currency_unit] += service_cost
+			if service_cost > 0.01 and service_name not in ignored_services:
+				service_list.append(service_name)
+
+				# Either create new entry or add value to existing.
+				if not cost_by_service.get(short_name, ''):
+					cost_by_service[short_name] = service_cost
 				else:
-					break # no more items left to list
-			except Exception as e:
-				print(e)
-				exit(1)
+					cost_by_service[short_name] = cost_by_service[short_name] + service_cost
 
-		elif next_token:
-			try:
-				response = ce.get_cost_and_usage(
-				    TimePeriod={
-				        'Start': start,
-				        'End': end
-				    },
-				    Granularity='MONTHLY',
-				    Metrics=[
-				        'BlendedCost',
-				    ],
-				    GroupBy=[
-				        {
-				            'Type': 'DIMENSION',
-				            'Key': 'SERVICE'
-				        },
-				    ],
-				    NextPageToken=token
-				)
-				cost_and_usage = cost_and_usage + response['ResultsByTime'][0]['Groups']
-				if response.get('NextPageToken', ''):
-					next_token = True
-					token = response['NextPageToken']
-				else:
-					break # no more items left to list
-			except Exception as e:
-				print(e)
-				exit(1)
+				# Create entry if it doesn't exist
+				if not currency_unit_by_service.get(short_name, ''):
+					currency_unit_by_service[short_name] = currency_unit
 
-	ignored_services = ['Tax',
-						'VM-Series Next-Generation Firewall Bundle 1 [VM-300]',
-						'Trend Micro Cloud One',
-						'The Things Stack AWS Launcher for LoRaWAN',
-						'Savings Plans for AWS Compute usage',
-						'OpenVPN Access Server (10 Connected Devices)',
-						'JPEGmini Photo Server',
-						'Fortinet Managed Rules for AWS WAF - Complete OWASP Top 10',
-						'Contact Center Telecommunications (service sold by AMCS, LLC) ',
-						'OpenVPN Access Server (100 Connected Devices)',
-						'bucketAV - Antivirus for Amazon S3 - previously VirusScan for Amazon S3' ]
+		# Create a string of all currency totals
+		total_account_cost_list   = []
+		total_account_cost_string = ''
+		for k, v in total_account_cost.items():
+			total_account_cost_list.append(f'{v:,.2f} {k}')
+		total_account_cost_string = ", ".join(total_account_cost_list)
 
-	service_short_name_mapping = {
-	'AWS Support (Business)': 'support-bus',
-	'AWS Support (Developer)': 'support-dev',
-	'AWS Support (Enterprise)': 'support-ent',
-	'Amazon Registrar': 'registrar',
-	'AWS CloudHSM': 'cloudhsm',
-	'AWS CloudTrail': 'cloudtrail',
-	'AWS Config': 'config',
-	'AWS Systems Manager': 'ssm',
-	'Amazon GuardDuty': 'guardduty',
-	'AmazonCloudWatch': 'cw',
-	'CloudWatch Events': 'cw events',
-	'AWS Backup': 'backup',
-	'AWS Cloud Map': 'cloudmap',
-	'AWS CloudShell': 'cloudshell',
-	'AWS CodeArtifact': 'codeartifact',
-	'AWS CodeCommit': 'codecommit',
-	'AWS CodePipeline': 'codepipeline',
-	'AWS Cost Explorer': 'costexplorer',
-	'AWS Data Pipeline': 'datapipeline',
-	'AWS DataSync': 'datasync',
-	'AWS Database Migration Service': 'dms',
-	'AWS Direct Connect': 'directconnect',
-	'AWS Directory Service': 'directory',
-	'AWS Elemental MediaStore': 'elemental',
-	'AWS Global Accelerator': 'accelerator',
-	'AWS Glue': 'glue',
-	'AWS IoT': 'iot',
-	'AWS Key Management Service': 'kms',
-	'AWS Lambda': 'lambda',
-	'AWS Secrets Manager': 'secrets',
-	'AWS Security Hub': 'sechub',
-	'AWS Step Functions': 'stepfunc',
-	'AWS WAF': 'waf',
-	'AWS X-Ray': 'xray',
-	'Amazon API Gateway': 'apigateway',
-	'Amazon Athena': 'athena',
-	'Amazon CloudFront': 'cloudfront',
-	'Amazon Cognito': 'cognito',
-	'Amazon Connect': 'connect',
-	'Amazon Detective': 'detective',
-	'Amazon DynamoDB': 'dynamodb',
-	'Amazon EC2 Container Registry (ECR)': 'ecr',
-	'Amazon ElastiCache': 'ecache',
-	'EC2 - Other': 'ec2',
-	'Amazon Elastic Compute Cloud - Compute': 'ec2',
-	'Amazon Elastic Container Service': 'ecs',
-	'Amazon Elastic Container Service for Kubernetes': 'eks',
-	'Amazon Elastic File System': 'efs',
-	'Amazon Elastic Load Balancing': 'elb',
-	'Amazon Elasticsearch Service': 'elasticsearch',
-	'Amazon FSx': 'fsx',
-	'Amazon Glacier': 'glacier',
-	'Amazon Inspector': 'inspector',
-	'Amazon Kinesis': 'kinesis',
-	'Amazon Kinesis Firehose': 'firehose',
-	'Amazon Polly': 'polly',
-	'Amazon Quantum Ledger Database': 'qldb',
-	'Amazon QuickSight': 'quicksight',
-	'Amazon Redshift': 'redshift',
-	'Amazon Relational Database Service': 'rds',
-	'Amazon Route 53': 'r53',
-	'Amazon SageMaker': 'sagemaker',
-	'Amazon Simple Email Service': 'ses',
-	'Amazon Simple Notification Service': 'sns',
-	'Amazon Simple Queue Service': 'sqs',
-	'Amazon Simple Storage Service': 's3',
-	'Amazon SimpleDB': 'simpledb',
-	'Amazon Textract': 'textract',
-	'Amazon Virtual Private Cloud': 'vpc',
-	'Amazon WorkDocs': 'workdocs',
-	'Amazon WorkSpaces': 'workspaces',
-	'CodeBuild': 'codebuild'
-	}
+		# Use mapping to short names
+		service_short_name_list = []
+		for service_name in service_list:
+			short_name = service_short_name_mapping.get(service_name, service_name)
+			service_short_name_list.append(short_name)
 
-	# Add to list unless ignored or over 0.01 of currency.
-	service_list = []
-	cost_by_service = {}
-	currency_unit_by_service = {}
-	total_account_cost = {}
-	for service in cost_and_usage:
-		service_name  = service['Keys'][0]
-		short_name    = service_short_name_mapping.get(service_name, service_name)
-		currency_unit = service['Metrics']['BlendedCost']['Unit']
-		service_cost  = float(service['Metrics']['BlendedCost']['Amount'])
-		total_account_cost.setdefault(currency_unit, 0.00)
-		total_account_cost[currency_unit] += service_cost
-		if service_cost > 0.01 and service_name not in ignored_services:
-			service_list.append(service_name)
+		# Remove repeats and sort
+		service_short_name_set  = set(service_short_name_list)
+		service_short_name_list = list(service_short_name_set)
+		service_short_name_list.sort()
 
-			# Either create new entry or add value to existing.
-			if not cost_by_service.get(short_name, ''):
-				cost_by_service[short_name] = service_cost
-			else:
-				cost_by_service[short_name] = cost_by_service[short_name] + service_cost
+		# Turn into string
+		services_used = ", ".join(service_short_name_list)
 
-			# Create entry if it doesn't exist
-			if not currency_unit_by_service.get(short_name, ''):
-				currency_unit_by_service[short_name] = currency_unit
+		cost_data[date_range_name] = {
+			'services_used': services_used, 
+			'cost_by_service': cost_by_service, 
+			'currency_unit_by_service': currency_unit_by_service, 
+			'total_account_cost_string': total_account_cost_string
+		}
 
-	# Create a string of all currency totals
-	total_account_cost_list   = []
-	total_account_cost_string = ''
-	for k, v in total_account_cost.items():
-		total_account_cost_list.append(f'{v:,.2f} {k}')
-	total_account_cost_string = ", ".join(total_account_cost_list)
-
-	# Use mapping to short names
-	service_short_name_list = []
-	for service_name in service_list:
-		short_name = service_short_name_mapping.get(service_name, service_name)
-		service_short_name_list.append(short_name)
-
-	# Remove repeats and sort
-	service_short_name_set  = set(service_short_name_list)
-	service_short_name_list = list(service_short_name_set)
-	service_short_name_list.sort()
-
-	# Turn into string
-	services_used = ", ".join(service_short_name_list)
-
-	return services_used, cost_by_service, currency_unit_by_service, total_account_cost_string
+	return cost_data
 
 
 ################################################################################################
 # Process Data
 ################################################################################################
-def analyze_data(account_id, account_alias, event, services_used, cost_by_service, currency_unit_by_service, total_account_cost):
+def analyze_data(account_id, account_alias, event, cost_data):
 
 	processed_data_list = []
 	########################
@@ -267,10 +294,19 @@ def analyze_data(account_id, account_alias, event, services_used, cost_by_servic
 	item.setdefault('email', {})['S'] = event['payload']['Email']
 	item.setdefault('joined_method', {})['S'] = event['payload']['JoinedMethod']
 	item.setdefault('joined_date', {})['S'] = event['payload']['JoinedTimestamp']
-	item.setdefault('services_used', {})['S'] = services_used if services_used else '-' # if services_used is empty set to '-'
-	item.setdefault('cost_by_service', {})['S'] = json.dumps(cost_by_service)
-	item.setdefault('currency_unit_by_service', {})['S'] = json.dumps(currency_unit_by_service)
-	item.setdefault('total_account_cost', {})['S'] = total_account_cost
+
+
+	# Current Month Cost Data
+	item.setdefault('current_month_services_used', {})['S'] 		    = cost_data['current_month']['services_used'] if cost_data['current_month']['services_used'] else '-'
+	item.setdefault('current_month_cost_by_service', {})['S'] 			= json.dumps(cost_data['current_month']['cost_by_service'])
+	item.setdefault('current_month_currency_unit_by_service', {})['S']  = json.dumps(cost_data['current_month']['currency_unit_by_service'])
+	item.setdefault('current_month_total_account_cost', {})['S'] 		= cost_data['current_month']['total_account_cost_string']
+
+	# Previous Month Cost Data
+	item.setdefault('previous_month_services_used', {})['S'] 			 = cost_data['previous_month']['services_used'] if cost_data['previous_month']['services_used'] else '-'
+	item.setdefault('previous_month_cost_by_service', {})['S'] 			 = json.dumps(cost_data['previous_month']['cost_by_service'])
+	item.setdefault('previous_month_currency_unit_by_service', {})['S']  = json.dumps(cost_data['previous_month']['currency_unit_by_service'])
+	item.setdefault('previous_month_total_account_cost', {})['S'] 		 = cost_data['previous_month']['total_account_cost_string']
 	processed_data_list.append({"PutRequest": {"Item": item}})
 
 	return processed_data_list
@@ -344,10 +380,10 @@ def start(event):
 		account_id 	  = event['payload']['Id']
 		account_name  = event['payload']['Name']
 		account_alias = clean_account_name(account_name)
-		services_used, cost_by_service, currency_unit_by_service, total_account_cost = get_service_usage(account_id, account_alias)
+		cost_data = get_service_usage(account_id, account_alias)
 
 		print(f'Analizing data for {account_id}({account_alias})...')
-		processed_data_list = analyze_data(account_id, account_alias, event, services_used, cost_by_service, currency_unit_by_service, total_account_cost)
+		processed_data_list = analyze_data(account_id, account_alias, event, cost_data)
 
 		print(f'Sending data for {account_alias}({account_id}) to DynamoDB...')
 		report_table = get_report_table(report_type)

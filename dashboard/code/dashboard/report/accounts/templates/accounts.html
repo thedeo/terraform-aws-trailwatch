@@ -26,7 +26,8 @@ Cost data does not include tax and may not reflect all third party charges. Amou
             <th>JoinMethod</th>
             <th>JoinDate</th>
             <th>ServicesUsed</th>
-            <th>Cost</th>
+            <th>CurrentMonth</th>
+            <th>PreviousMonth</th>
         </tr>
     </thead>
 </table>
@@ -46,8 +47,11 @@ Cost data does not include tax and may not reflect all third party charges. Amou
 function format ( d ) {
     // `d` is the original data object for the row
 
-    const cost_by_service          = JSON.parse(d.cost_by_service);
-    const currency_unit_by_service = JSON.parse(d.currency_unit_by_service);
+    const current_month_cost_by_service          = JSON.parse(d.current_month_cost_by_service);
+    const current_month_currency_unit_by_service = JSON.parse(d.current_month_currency_unit_by_service);
+
+    const previous_month_cost_by_service          = JSON.parse(d.previous_month_cost_by_service);
+    const previous_month_currency_unit_by_service = JSON.parse(d.previous_month_currency_unit_by_service);
 
     function format_num ( num ) {
         return num.toLocaleString(undefined, {
@@ -65,20 +69,32 @@ function format ( d ) {
     var td=makeTag("<td>","</td>");
     var tr=makeTag("<tr>","</tr>");
 
-    function generateTable(data){
-        return tr(
+    function generateTable(current_month_cost_by_service, previous_month_cost_by_service){
+        return tr(td("<h3>Current Month</h3>")+td(""))+
+        tr(
             td("<strong>Service</strong>")+
             td("<strong>Cost</strong>")
         )+
-        Object.keys(data).reduce(function(o,n){
+        Object.keys(current_month_cost_by_service).reduce(function(o,n){
             return o+tr(
                 td(n)+""+
-                td(format_num(data[n])+" "+currency_unit_by_service[n]+"")
+                td(format_num(current_month_cost_by_service[n])+" "+current_month_currency_unit_by_service[n]+"")
+            );
+        },"")+
+        tr(td("<h3>Previous Month</h3>")+td(""))+
+        tr(
+            td("<strong>Service</strong>")+
+            td("<strong>Cost</strong>")
+        )+
+        Object.keys(previous_month_cost_by_service).reduce(function(o,n){
+            return o+tr(
+                td(n)+""+
+                td(format_num(previous_month_cost_by_service[n])+" "+previous_month_currency_unit_by_service[n]+"")
             );
         },"")
     };
 
-    return generateTable(cost_by_service);
+    return generateTable(current_month_cost_by_service, previous_month_cost_by_service);
 }
 
 $(document).ready(function() {
@@ -119,8 +135,9 @@ $(document).ready(function() {
             { "data": "email" },
             { "data": "joined_method" },
             { "data": "joined_date" },
-            { "data": "services_used" },
-            { "data": "total_account_cost" }
+            { "data": "current_month_services_used" },
+            { "data": "current_month_total_account_cost" },
+            { "data": "previous_month_total_account_cost" }
         ],
         "order": [[1, 'asc']]
     } );
