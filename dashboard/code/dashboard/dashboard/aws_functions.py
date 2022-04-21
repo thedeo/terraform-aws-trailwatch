@@ -44,7 +44,7 @@ def get_report_table(report_type):
 def get_step_function_status(report_type):
 	# Get information about the last successful SFN execution.
 	sfn = boto3.client('stepfunctions', region_name=region)
-	state_machine_arn = f'arn:aws:states:{region}:{account_id}:stateMachine:{project_name}-report-{report_type}'
+	state_machine_arn  = f'arn:aws:states:{region}:{account_id}:stateMachine:{project_name}-report-{report_type}'
 	state_machine_name = f'{project_name}-report-{report_type}'
 
 	retry_limit = 3

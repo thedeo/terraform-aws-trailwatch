@@ -10,39 +10,7 @@
 	<br><br><br>
 
 <div class="tab">
-	<button class="tablinks" onclick="openTab(event, 'AutomationsTab')" id="automations">Automations</button>
 	<button class="tablinks" onclick="openTab(event, 'ReportsTab')" id="reports">Reports</button>
-</div>
-
-<div id="AutomationsTab" class="tabcontent">
-	<h1>Scheduled Automations</h1>
-	<a href="/admin-tools?tab=automations" class="refresh-button">Refresh <i class="fa fa-refresh" aria-hidden="true"></i></a>
-	<table id="automations_table">
-		<tr>
-		<th>Automation</th>
-		<th>Schedule</th>
-		<th>Last Run</th>
-		<th>Status</th>
-		<th style="width: 25%;">Actions</th>
-		</tr>
-		{% for automation in automations %}
-			<tr>
-				<td>{{ automation.friendly_name }}</td>
-				<td>{{ automation.lambda_function_schedule }}</td>
-				<td>{{ automation.last_run_date }}</td>
-				<td style="color: {{ automation.status_color }}; font-weight: bold;">{{ automation.overall_status | safe }}</td>
-				<td>
-				<form method="post">
-					{% csrf_token %}
-					<button style="float: left; margin-right: 10px;" type="submit" name="automation_to_run" value="{{ automation.lambda_function_name }}">Run</button>
-				</form>
-				<form method="get" target="_blank" action="https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-groups/log-group/$252Faws$252Flambda$252F{{ automation.lambda_function_name }}">
-						<button style="float: left;" type="submit">View Logs</button>
-				</form>
-				</td>
-			</tr>
-		{% endfor %}
-	</table>
 </div>
 
 <div id="ReportsTab" class="tabcontent">
@@ -51,23 +19,21 @@
 	<table id="automations_table">
 		<tr>
 		<th>Report</th>
-		<th>Schedule</th>
 		<th>Last Run</th>
 		<th>Status</th>
 		<th style="width: 25%;">Actions</th>
 		</tr>
-		{% for reports in reports %}
+		{% for key, value in reports.items %}
 			<tr>
-				<td>{{ reports.friendly_name }}</td>
-				<td>{{ reports.lambda_function_schedule }}</td>
-				<td>{{ reports.last_run_date }}</td>
-				<td style="color: {{ reports.status_color }}; font-weight: bold;">{{ reports.overall_status | safe }}</td>
+				<td>{{ value.report_name }}</td>
+				<td>{{ value.report_stop_date }}</td>
+				<td style="color: {{ value.report_status_color }}; font-weight: bold;">{{ value.report_status_html | safe }}</td>
 				<td>
 				<form method="post">
 					{% csrf_token %}
-					<button style="float: left; margin-right: 10px;" type="submit" name="report_to_run" value="{{ reports.lambda_function_name }}">Run</button>
+					<button style="float: left; margin-right: 10px;" type="submit" name="report_type" value="{{ key | safe }}">Run</button>
 				</form>
-				<form method="get" target="_blank" action="https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-groups/log-group/$252Faws$252Flambda$252F{{ reports.lambda_function_name }}">
+				<form method="get" target="_blank" action="https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-groups/log-group/$252Faws$252Flambda$252F{{ project_name }}-reports">
 						<button style="float: left;" type="submit">View Logs</button>
 				</form>
 				</td>

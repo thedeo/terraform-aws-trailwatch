@@ -18,7 +18,6 @@ from boto3.dynamodb.conditions import Key, Attr
 report_type = 'account'
 
 def get_params(request):
-    
     account_id = request.GET.get('account_id')
 
     params = {}

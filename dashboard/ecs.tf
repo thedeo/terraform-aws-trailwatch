@@ -141,7 +141,8 @@ resource "aws_iam_role_policy" "ecs_task_role" {
           "arn:aws:states:${var.region}:${var.org_account_id}:stateMachine:${var.project_name}-report-*"
         ],
         "Action": [
-          "states:ListExecutions"
+          "states:ListExecutions",
+          "states:StartExecution"
         ]
       }
    ]
