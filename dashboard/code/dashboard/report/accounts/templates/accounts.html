@@ -70,7 +70,8 @@ function format ( d ) {
     var tr=makeTag("<tr>","</tr>");
 
     function generateTable(current_month_cost_by_service, previous_month_cost_by_service){
-        return tr(td("<h3>Current Month</h3>")+td(""))+
+        return tr(td("<div style=\"font-size: 20px;\">Current Month</div>"+""+
+            "<div style=\"font-style: italic;\">"+d.current_month_date_range)+"</div>"+td(""))+
         tr(
             td("<strong>Service</strong>")+
             td("<strong>Cost</strong>")
@@ -81,7 +82,8 @@ function format ( d ) {
                 td(format_num(current_month_cost_by_service[n])+" "+current_month_currency_unit_by_service[n]+"")
             );
         },"")+
-        tr(td("<h3>Previous Month</h3>")+td(""))+
+        tr(td("<br><div style=\"font-size: 20px;\">Previous Month</div>"+""+
+            "<div style=\"font-style: italic;\">"+d.previous_month_date_range)+"</div>"+td(""))+
         tr(
             td("<strong>Service</strong>")+
             td("<strong>Cost</strong>")

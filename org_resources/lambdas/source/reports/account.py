@@ -42,15 +42,17 @@ def get_service_usage(account_id, account_alias):
 
 
 	# Generate date ranges for current and previous month.
-	date_ranges = []
+	date_ranges = {}
 
 	# Current Month Date Range
 	first_of_month = datetime.date.today().replace(day=1)
 	today          = datetime.date.today()
+
+	month_name 	   = today.strftime("%b")
 	start          = first_of_month.strftime("%Y-%m-%d")
 	end            = today.strftime("%Y-%m-%d")
 
-	date_ranges.append({'date_range_name': 'current_month', 'start': start, 'end': end})
+	date_ranges['current_month'] = {'month_name': month_name, 'start': start, 'end': end}
 
 	# Previous Month Date Range
 	month = int(first_of_month.strftime("%m"))
@@ -60,19 +62,21 @@ def get_service_usage(account_id, account_alias):
 		year -= 1
 	else:
 		previous_month = month - 1
-	one_month_ago = first_of_month.replace(year=year,month=previous_month,day=1)
+	last_month   		  = first_of_month.replace(year=year,month=previous_month,day=1)
+	end_of_previous_month = datetime.date(year + int(month/12), month%12+1, 1)-datetime.timedelta(days=1)
 
-	start = one_month_ago.strftime("%Y-%m-%d")
-	end   = first_of_month.strftime("%Y-%m-%d")
+	month_name = last_month.strftime("%b")
+	start 	   = last_month.strftime("%Y-%m-%d")
+	end   	   = end_of_previous_month.strftime("%Y-%m-%d")
 
-	date_ranges.append({'date_range_name': 'previous_month', 'start': start, 'end': end})
+	date_ranges['previous_month'] = {'month_name': month_name, 'start': start, 'end': end}
 
 	# Retrieve data and place into dict.
 	cost_data = {}
-	for date_range in date_ranges:
-		date_range_name = date_range['date_range_name']
-		start 			= date_range['start']
-		end   			= date_range['end']
+	for date_range in date_ranges.keys():
+		month_name = date_ranges[date_range]['month_name']
+		start 	   = date_ranges[date_range]['start']
+		end   	   = date_ranges[date_range]['end']
 
 		cost_and_usage = []
 		# Get list of all items in paginated list
@@ -268,7 +272,22 @@ def get_service_usage(account_id, account_alias):
 		# Turn into string
 		services_used = ", ".join(service_short_name_list)
 
-		cost_data[date_range_name] = {
+		# Create string for date range
+		start_day = int(start[8:])
+		end_day   = int(end[8:])
+
+		def get_suffix(day):
+			if 4 <= day <= 20 or 24 <= day <= 30:
+			    suffix = "th"
+			else:
+			    suffix = ["st", "nd", "rd"][day % 10 - 1]
+			return suffix
+
+		date_range_string = f'{month_name} {start_day}{get_suffix(start_day)} - {end_day}{get_suffix(end_day)}'
+
+
+		cost_data[date_range] = {
+			'date_range': date_range_string,
 			'services_used': services_used, 
 			'cost_by_service': cost_by_service, 
 			'currency_unit_by_service': currency_unit_by_service, 
@@ -295,18 +314,19 @@ def analyze_data(account_id, account_alias, event, cost_data):
 	item.setdefault('joined_method', {})['S'] = event['payload']['JoinedMethod']
 	item.setdefault('joined_date', {})['S'] = event['payload']['JoinedTimestamp']
 
-
 	# Current Month Cost Data
+	item.setdefault('current_month_date_range', {})['S'] 		        = cost_data['current_month']['date_range']
 	item.setdefault('current_month_services_used', {})['S'] 		    = cost_data['current_month']['services_used'] if cost_data['current_month']['services_used'] else '-'
 	item.setdefault('current_month_cost_by_service', {})['S'] 			= json.dumps(cost_data['current_month']['cost_by_service'])
 	item.setdefault('current_month_currency_unit_by_service', {})['S']  = json.dumps(cost_data['current_month']['currency_unit_by_service'])
 	item.setdefault('current_month_total_account_cost', {})['S'] 		= cost_data['current_month']['total_account_cost_string']
 
 	# Previous Month Cost Data
-	item.setdefault('previous_month_services_used', {})['S'] 			 = cost_data['previous_month']['services_used'] if cost_data['previous_month']['services_used'] else '-'
-	item.setdefault('previous_month_cost_by_service', {})['S'] 			 = json.dumps(cost_data['previous_month']['cost_by_service'])
-	item.setdefault('previous_month_currency_unit_by_service', {})['S']  = json.dumps(cost_data['previous_month']['currency_unit_by_service'])
-	item.setdefault('previous_month_total_account_cost', {})['S'] 		 = cost_data['previous_month']['total_account_cost_string']
+	item.setdefault('previous_month_date_range', {})['S'] 		        = cost_data['previous_month']['date_range']
+	item.setdefault('previous_month_services_used', {})['S'] 			= cost_data['previous_month']['services_used'] if cost_data['previous_month']['services_used'] else '-'
+	item.setdefault('previous_month_cost_by_service', {})['S'] 			= json.dumps(cost_data['previous_month']['cost_by_service'])
+	item.setdefault('previous_month_currency_unit_by_service', {})['S'] = json.dumps(cost_data['previous_month']['currency_unit_by_service'])
+	item.setdefault('previous_month_total_account_cost', {})['S'] 		= cost_data['previous_month']['total_account_cost_string']
 	processed_data_list.append({"PutRequest": {"Item": item}})
 
 	return processed_data_list
