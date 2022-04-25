@@ -11,7 +11,7 @@
 <div id='time_range'>&nbsp;&nbsp;[ {{ params.start }} -- {{ params.end }} ]</div>
 <div>&nbsp;&nbsp;<button class='time_buttons' onclick="OneHourAgo()">last hour</button>&nbsp;&nbsp;<button class='time_buttons' onclick="OneDayAgo()">last day</button>&nbsp;&nbsp;<button class='time_buttons' onclick="OneWeekAgo()">last week</button></div>
 <br>
-<table id="example" class="display" style="width:100%">
+<table id="events" class="display" style="width:100%">
     <thead>
         <tr>
             <th></th>
@@ -116,7 +116,34 @@ function format ( d ) {
 }
 
 $(document).ready(function() {
-    var table = $('#example').DataTable( {
+    var table = $('#events').DataTable( {
+        dom: 'QlfrtBip',
+        searchBuilder: {
+            logic: 'OR'
+        },
+        buttons: [
+            {
+                extend: 'csv',
+                text: 'CSV',
+                exportOptions: {
+                    modifier: {
+                        search: 'none'
+                    }
+                }
+            },
+            {   
+                className: 'buttons-json',
+                text: 'JSON',
+                action: function ( e, dt, button, config ) {
+                    var data = dt.buttons.exportData();
+ 
+                    $.fn.dataTable.fileSave(
+                        new Blob( [ JSON.stringify( data ) ] ),
+                        'events.json'
+                    );
+                }
+            }
+        ],
         "data": tdata,
         "columns": [
             {
@@ -141,7 +168,7 @@ $(document).ready(function() {
     } );
      
     // Add event listener for opening and closing details
-    $('#example tbody').on('click', 'td.details-control', function () {
+    $('#events tbody').on('click', 'td.details-control', function () {
         var tr = $(this).closest('tr');
         var row = table.row( tr );
  

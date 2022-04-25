@@ -64,6 +64,18 @@ $(document).ready(function() {
                         search: 'none'
                     }
                 }
+            },
+            {   
+                className: 'buttons-json',
+                text: 'JSON',
+                action: function ( e, dt, button, config ) {
+                    var data = dt.buttons.exportData();
+ 
+                    $.fn.dataTable.fileSave(
+                        new Blob( [ JSON.stringify( data ) ] ),
+                        'amis.json'
+                    );
+                }
             }
         ],
         "pageLength": 10,
