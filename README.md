@@ -79,6 +79,10 @@ You will notice that the **org_cf_stacks.tf** and **member_cf_stacks.tf** take s
 
 # Security Considerations
 
+When deploying this solution you should consider using best practices to store sensitive Terraform variables.
+
+https://learn.hashicorp.com/tutorials/terraform/sensitive-variables
+
 None of the information processed or stored by this solution would be considered particularly sensitive. However, I recommend that when deploying the solution you limit network access to the dashboard only to trusted networks. Make sure you update the Terraform variable named **trusted_cidrs**.
 
 The dashboard has functionality to support ADFS SAML authentication but since this is just a POC that functionality is disabled by default in Django. The **django-auth-adfs** libraries are commented out. If you want to use the built in Django admin console you will need to uncomment the path for 'admin/' in urls.py. If you decide to enable the admin URI, you can hit the admin by just typing in **/admin/** to the end of your domain. Make sure to include the trailing slash.
