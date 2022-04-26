@@ -144,6 +144,17 @@ resource "aws_iam_role_policy" "ecs_task_role" {
           "states:ListExecutions",
           "states:StartExecution"
         ]
+      },
+      {
+        "Action": [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ],
+        "Effect": "Allow",
+        "Resource": "${var.dynamodb_key_arn}"
       }
    ]
 }

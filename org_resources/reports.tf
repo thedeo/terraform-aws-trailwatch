@@ -55,6 +55,7 @@ resource "aws_lambda_function" "reports" {
       region            = "${var.region}"
       org_account_id    = "${var.org_account_id}"
       member_role_name  = "${aws_iam_role.report_automation.name}"
+      dynamodb_key_arn  = "${aws_kms_key.dynamodb.arn}"
     }
   }
 }

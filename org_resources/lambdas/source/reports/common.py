@@ -19,6 +19,7 @@ project_name	 	= os.environ['project_name']
 region			 	= os.environ['region']
 org_account_id		= os.environ['org_account_id']
 member_role_name 	= os.environ['member_role_name']
+dynamodb_key_arn 	= os.environ['dynamodb_key_arn']
 session_name 		= f'{project_name}-report'
 
 ################################################################################################
@@ -30,9 +31,9 @@ is_account_id = re.compile('^[0-9]{12}$')
 # This function will make the datetime object serializable for json.dumps
 ################################################################################################
 def datetime_handler(x):
-    if isinstance(x, datetime.datetime):
-        return x.isoformat()
-    raise TypeError("Unknown type")
+	if isinstance(x, datetime.datetime):
+		return x.isoformat()
+	raise TypeError("Unknown type")
 
 ################################################################################################
 # Create cross account credentials
@@ -177,6 +178,11 @@ def create_report_table(project_name, report_type, table_hash, table_range):
 						'AttributeType': 'S'
 					}
 				],
+				SSESpecification={
+					'Enabled': True,
+					'SSEType': 'KMS',
+					'KMSMasterKeyId': dynamodb_key_arn
+				},
 				BillingMode='PAY_PER_REQUEST'
 			)
 			waiter = dynamodb.get_waiter('table_exists')

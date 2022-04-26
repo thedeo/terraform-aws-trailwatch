@@ -188,6 +188,17 @@ resource "aws_iam_role_policy" "event_parse" {
         Effect   = "Allow"
         Resource = "*"
       },
+      {
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ]
+        Effect   = "Allow"
+        Resource = "${aws_kms_key.dynamodb.arn}"
+      }
     ]
   })
 }
@@ -245,6 +256,17 @@ resource "aws_iam_role_policy" "email_summary" {
                 "${var.ses_identity_arn}"
             ]
       },
+      {
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ]
+        Effect   = "Allow"
+        Resource = "${aws_kms_key.dynamodb.arn}"
+      }
     ]
   })
 }
@@ -354,6 +376,18 @@ resource "aws_iam_role_policy" "report_automation_master" {
             "arn:aws:iam::*:role/${var.project_name}-report-automation"
         ]
       },
+      {
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey",
+          "kms:CreateGrant"
+        ]
+        Effect   = "Allow"
+        Resource = "${aws_kms_key.dynamodb.arn}"
+      }
     ]
   })
 }

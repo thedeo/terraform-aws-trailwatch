@@ -6,6 +6,7 @@ variable "trusted_cidrs" {}
 variable "dashboard_domain" {}
 variable "dockerhub_username" {}
 variable "dockerhub_password" {}
+variable "dynamodb_key_arn" {}
 
 variable "cidr" {
   default = "172.31.0.0/16"

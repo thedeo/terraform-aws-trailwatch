@@ -100,9 +100,14 @@ resource "aws_cloudwatch_event_target" "codepipeline" {
   role_arn  = aws_iam_role.eventbridge_codepipeline.arn
 }
 
-resource "aws_kms_key" "key" {
+resource "aws_kms_key" "codepipeline" {
   description             = "${var.project_name}-codepipeline"
-  deletion_window_in_days = 10
+  deletion_window_in_days = 7
+}
+
+resource "aws_kms_alias" "codepipeline" {
+  name          = "alias/${var.project_name}-codepipeline"
+  target_key_id = aws_kms_key.codepipeline.key_id
 }
 
 resource "aws_iam_role" "codepipeline_role" {

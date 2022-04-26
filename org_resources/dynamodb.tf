@@ -19,6 +19,11 @@ resource "aws_dynamodb_table" "events" {
     enabled        = true
   }
 
+  server_side_encryption {
+    enabled = true
+    kms_key_arn = aws_kms_key.dynamodb.arn
+  }
+
   lifecycle {
     prevent_destroy = false
   }
@@ -35,7 +40,13 @@ resource "aws_dynamodb_table" "active_reports" {
     type = "S"
   }
 
+  server_side_encryption {
+    enabled = true
+    kms_key_arn = aws_kms_key.dynamodb.arn
+  }
+
   lifecycle {
     prevent_destroy = false
   }
 }
+
