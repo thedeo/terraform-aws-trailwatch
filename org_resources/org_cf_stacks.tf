@@ -1,3 +1,20 @@
+resource "aws_cloudformation_stack_set_instance" "org_regional_resources" {
+  depends_on      = [
+                      aws_cloudformation_stack_set_instance.regional_resources, # To give time for roles to finish creating
+                      aws_cloudformation_stack_set.org_regional_resources,
+                      aws_iam_role.AWSCloudFormationStackSetAdministrationRole,
+                      aws_iam_role_policy.AWSCloudFormationStackSetAdministrationRole,
+                      aws_iam_role.AWSCloudFormationStackSetExecutionRole,
+                      aws_iam_role_policy.AWSCloudFormationStackSetExecutionRole,
+                    ]
+  # Remove us-east-1 in for_each because that is handled in eventbridge_rules.tf
+  for_each       = setsubtract(var.available_regions, ["us-east-1"]) 
+
+  account_id     = var.org_account_id
+  region         = each.value
+  stack_set_name = aws_cloudformation_stack_set.org_regional_resources.name
+}
+
 resource "aws_cloudformation_stack_set" "org_regional_resources" {
   depends_on              = [
                               aws_iam_role.AWSCloudFormationStackSetAdministrationRole,
@@ -148,21 +165,4 @@ resource "aws_cloudformation_stack_set" "org_regional_resources" {
   }
 }
 TEMPLATE
-}
-
-resource "aws_cloudformation_stack_set_instance" "org_regional_resources" {
-  depends_on      = [
-                      aws_cloudformation_stack_set_instance.regional_resources, # To give time for roles to finish creating
-                      aws_cloudformation_stack_set.org_regional_resources,
-                      aws_iam_role.AWSCloudFormationStackSetAdministrationRole,
-                      aws_iam_role_policy.AWSCloudFormationStackSetAdministrationRole,
-                      aws_iam_role.AWSCloudFormationStackSetExecutionRole,
-                      aws_iam_role_policy.AWSCloudFormationStackSetExecutionRole,
-                    ]
-  # Remove us-east-1 in for_each because that is handled in eventbridge_rules.tf
-  for_each       = setsubtract(var.available_regions, ["us-east-1"]) 
-
-  account_id     = var.org_account_id
-  region         = each.value
-  stack_set_name = aws_cloudformation_stack_set.org_regional_resources.name
 }
