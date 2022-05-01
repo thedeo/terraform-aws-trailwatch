@@ -3,6 +3,8 @@ import json
 import logging
 import datetime
 
+from calendar import monthrange
+
 from common import create_client
 from common import retry
 from common import clean_account_name
@@ -48,6 +50,12 @@ def get_service_usage(account_id, account_alias):
 	first_of_month = datetime.date.today().replace(day=1)
 	today          = datetime.date.today()
 
+	# If you pass a start and end date of the same date the
+	# API call will fail. So with this we ensure that on the
+	# first of the month doesn't cause an error.
+	if first_of_month == today:
+		today = today.replace(day=2)
+
 	month_name 	   = today.strftime("%b")
 	start          = first_of_month.strftime("%Y-%m-%d")
 	end            = today.strftime("%Y-%m-%d")
@@ -62,8 +70,9 @@ def get_service_usage(account_id, account_alias):
 		year -= 1
 	else:
 		previous_month = month - 1
+		
 	last_month   		  = first_of_month.replace(year=year,month=previous_month,day=1)
-	end_of_previous_month = datetime.date(year + int(month/12), month%12+1, 1)-datetime.timedelta(days=1)
+	end_of_previous_month = last_month.replace(day = monthrange(last_month.year, last_month.month)[1])
 
 	month_name = last_month.strftime("%b")
 	start 	   = last_month.strftime("%Y-%m-%d")
@@ -108,6 +117,8 @@ def get_service_usage(account_id, account_alias):
 						break # no more items left to list
 				except Exception as e:
 					print(e)
+					print(f'Start: {start}')
+					print(f'End: {end}')
 					exit(1)
 
 			elif next_token:
@@ -137,6 +148,8 @@ def get_service_usage(account_id, account_alias):
 						break # no more items left to list
 				except Exception as e:
 					print(e)
+					print(f'Start: {start}')
+					print(f'End: {end}')
 					exit(1)
 
 		ignored_services = ['Tax',
