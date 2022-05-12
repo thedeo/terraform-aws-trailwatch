@@ -458,6 +458,98 @@ resource "aws_iam_role_policy" "report_automation" {
 }
 
 
+###################################
+# Automation Master
+# *Used for config type automation
+###################################
+resource "aws_iam_role" "automation_master" {
+  name = "${var.project_name}-automation-master"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "automation_master" {
+  name = "${var.project_name}-automation-master"
+  role = aws_iam_role.automation_master.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "sts:AssumeRole"
+        ]
+        Effect   = "Allow"
+        Resource = [
+            "arn:aws:iam::*:role/${var.project_name}-automation"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "automation_master_AWSLambdaBasicExecutionRole" {
+  role       = aws_iam_role.automation_master.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+##############################
+# Report Automation
+##############################
+resource "aws_iam_role" "automation" {
+  name = "${var.project_name}-automation"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "AWS": "${aws_iam_role.automation_master.arn}"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "automation" {
+  name = "${var.project_name}-automation"
+  role = aws_iam_role.automation.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ec2:DescribeSecurityGroups",
+          "ec2:RevokeSecurityGroupIngress"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+
 
 ################################
 # Report Schedule Event
