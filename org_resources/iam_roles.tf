@@ -252,9 +252,7 @@ resource "aws_iam_role_policy" "email_summary" {
           "ses:SendEmail"
         ]
         Effect   = "Allow"
-        Resource = [
-                "${var.ses_identity_arn}"
-            ]
+        Resource = "*"
       },
       {
         Action = [
@@ -497,7 +495,21 @@ resource "aws_iam_role_policy" "automation_master" {
         Resource = [
             "arn:aws:iam::*:role/${var.project_name}-automation"
         ]
-      }
+      },
+      {
+        Action = [
+          "organizations:DescribeAccount"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+      {
+        Action = [
+          "ses:SendEmail"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
     ]
   })
 }
@@ -508,7 +520,7 @@ resource "aws_iam_role_policy_attachment" "automation_master_AWSLambdaBasicExecu
 }
 
 ##############################
-# Report Automation
+# Automation member role
 ##############################
 resource "aws_iam_role" "automation" {
   name = "${var.project_name}-automation"

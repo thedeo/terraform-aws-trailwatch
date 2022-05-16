@@ -5,13 +5,12 @@ import json
 import logging
 import boto3
 import os
+
 from time import sleep
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-alert_recipient = os.environ['ALERT_RECIPIENT']
-alert_recipients = [alert_recipient]
 
 ################################################################################################
 # Vars
@@ -20,10 +19,10 @@ project_name	 	   	= os.environ['project_name']
 region			 	   	= os.environ['region']
 ses_region		 	   	= os.environ['ses_region']
 alert_sender            = os.environ['alert_sender']
-alert_recipients        = os.environ['alert_recipients']
+alert_recipients        = json.loads(os.environ['alert_recipients'])
 member_role_name 		= os.environ['member_role_name']
-monitored_ports			= os.environ['monitored_ports']
-principal_exceptions	= os.environ['principal_exceptions']
+principal_exceptions	= json.loads(os.environ['principal_exceptions'])
+monitored_ports			= json.loads(os.environ['monitored_ports'])
 session_name			= f'{project_name}-SecurityGroupAutomation'
 
 ################################################################################################
@@ -67,9 +66,9 @@ def create_client(account, region, service):
     return client
 
 ################################################################################################
-# Get the descriptive alias of an account
+# Get the descriptive alias of an account_id
 ################################################################################################
-def get_account_alias(account):
+def get_account_alias(account_id):
 
 	# This makes the names consistent and more friendly to work with
 	def clean_account_name(account_name):
@@ -84,10 +83,10 @@ def get_account_alias(account):
 	retries = 0
 	while True:
 		try:
-			response = organizations.describe_account(AccountId=account)
+			response = organizations.describe_account(AccountId=account_id)
 			return clean_account_name(response['Account']['Name'])
 		except Exception as e:
-			print(f'Could not get account_alias for {account} from Organizations.')
+			print(f'Could not get account_alias for {account_id} from Organizations.')
 			print(e)
 			retries += 1
 			sleep(1)
@@ -266,7 +265,7 @@ def parse_event(event):
 	account_id    = event['detail']['userIdentity']['accountId']
 	account_alias = get_account_alias(account_id)
 
-	if account_alias == 'Unresolved - check manually':
+	if account_alias == 'Unknown':
 		remediation_exception = True
 		print(f'Exception logged for {account_id} since we cannot authenticate with the account.')
 
@@ -302,7 +301,7 @@ def parse_event(event):
 	################################################
 	for principal in principal_exceptions:
 		if user_check.find(principal) != -1:
-			print(f'Principal Exception found for {user_check}.')
+			print(f'Exception for {user_check}.')
 			remediation_exception = True
 	
 	####################################
@@ -434,8 +433,6 @@ def parse_event(event):
 					if this_range not in violating_ports:
 						violating_ports.append(f'{this_range}')
 					
-
-
 
 		# If a violation was found, capture key details
 		if violation_exists == True:

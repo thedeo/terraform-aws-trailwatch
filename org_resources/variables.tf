@@ -2,6 +2,8 @@ variable "project_name" {}
 variable "region" {}
 variable "alert_sender" {}
 variable "alert_recipients" {}
+variable "secgroup_automation_principal_exceptions" {}
+variable "secgroup_automation_monitored_ports" {}
 variable "ignored_iam_principals" {}
 variable "ses_identity_arn" {}
 variable "email_summary_frequency" {}

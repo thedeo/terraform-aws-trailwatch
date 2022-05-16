@@ -1,7 +1,3 @@
-locals {
-  ses_region = element(split(":", "${var.ses_identity_arn}"), 3)
-}
-
 data "aws_route53_zone" "selected" {
   zone_id = var.dashboard_domain
 }

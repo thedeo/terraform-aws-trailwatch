@@ -168,6 +168,55 @@ resource "aws_cloudformation_stack_set" "iam_roles" {
           ]
         }
       }
+    },
+    "AutomationRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  "${aws_iam_role.automation_master.arn}"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "MaxSessionDuration": 3600,
+        "RoleName": "${var.project_name}-automation"
+      }
+    },
+    "AutomationRolePolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "DependsOn": "AutomationRole",
+      "Properties": {
+        "Description": "Permissions to perform ${var.project_name} automations.",
+        "ManagedPolicyName": "${var.project_name}-automation",
+        "Path": "/",
+        "Roles": [
+          "${var.project_name}-automation"
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "ec2:DescribeSecurityGroups",
+                "ec2:RevokeSecurityGroupIngress"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+      }
     }
   }
 }

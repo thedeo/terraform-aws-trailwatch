@@ -1,7 +1,3 @@
-locals {
-  ses_region = element(split(":", "${var.ses_identity_arn}"), 3)
-}
-
 ############################
 # Security Group Automation
 ############################
@@ -23,20 +19,31 @@ resource "aws_lambda_function" "automation_security_groups" {
 
   environment {
     variables = {
-      project_name      = "${var.project_name}"
-      region            = "${var.region}"
-      org_account_id    = "${var.org_account_id}"
-      member_role_name  = "${aws_iam_role.automation.name}"
-      ses_region        = "${local.ses_region}"
-      alert_sender      = "${var.alert_sender}"
-      alert_recipients  = "${jsonencode(var.alert_recipients)}"
+      project_name         = "${var.project_name}"
+      region               = "${var.region}"
+      org_account_id       = "${var.org_account_id}"
+      member_role_name     = "${aws_iam_role.automation.name}"
+      ses_region           = "${local.ses_region}"
+      alert_sender         = "${var.alert_sender}"
+      alert_recipients     = "${jsonencode(var.alert_recipients)}"
+      principal_exceptions = "${jsonencode(var.secgroup_automation_principal_exceptions)}"
+      monitored_ports      = "${jsonencode(var.secgroup_automation_monitored_ports)}"
     }
   }
 }
 
-resource "aws_cloudwatch_event_rule" "global_event_rules" {
+resource "aws_lambda_permission" "automation_event_rules" {
+  statement_id  = "AllowExecutionFromEvents"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.automation_security_groups.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = "arn:aws:events:${var.region}:${var.org_account_id}:rule/${var.project_name}-automation-security-groups"
+}
+
+resource "aws_cloudwatch_event_rule" "automation_event_rules" {
   name          = "${var.project_name}-automation-security-groups"
   description   = "Security Group Automation"
+  is_enabled    = false
   event_pattern = <<EOF
 {
   "source": [
@@ -57,8 +64,8 @@ resource "aws_cloudwatch_event_rule" "global_event_rules" {
 EOF
 }
 
-resource "aws_cloudwatch_event_target" "automation_security_groups" {
-  depends_on = [aws_cloudwatch_event_rule.automation_security_groups]
+resource "aws_cloudwatch_event_target" "automation_event_rules" {
+  depends_on = [aws_cloudwatch_event_rule.automation_event_rules]
 
   rule       = "${var.project_name}-automation-security-groups"
   target_id  = "${var.project_name}-automation-security-groups"

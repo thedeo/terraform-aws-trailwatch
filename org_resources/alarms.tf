@@ -42,6 +42,28 @@ resource "aws_cloudwatch_metric_alarm" "email_summary" {
   }
 }
 
+resource "aws_cloudwatch_metric_alarm" "automation_security_groups" {
+  alarm_name          = "${var.project_name}-automation-security-groups"
+  alarm_description   = "${var.project_name} security group automation errors."
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "Errors"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Maximum"
+  threshold           = 1
+  treat_missing_data  = "notBreaching"
+
+  alarm_actions = [
+    "${aws_sns_topic.alarms.arn}",
+  ]
+
+  dimensions = {
+    FunctionName = "${aws_lambda_function.automation_security_groups.function_name}"
+    Resource     = "${aws_lambda_function.automation_security_groups.function_name}"
+  }
+}
+
 
 resource "aws_cloudwatch_metric_alarm" "reports" {
   for_each = var.reports
