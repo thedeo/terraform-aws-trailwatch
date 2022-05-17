@@ -20,6 +20,19 @@ variable "reports" {
   default = ["account", "ami", "securitygroup", "user"]
 }
 
+variable "automations" {
+  type = set(object({
+    name     = string
+    type     = string
+  }))
+  default = (
+    {
+      name     = "${var.project_name}-automation-security-groups"
+      target   = aws_lambda_function.automation_security_groups.arn
+    }
+  )
+}
+
 # These map vars are used to populate the eventbridge rules in a "for_each" loop
 variable "global_event_rule_type_map" {
   type    = map

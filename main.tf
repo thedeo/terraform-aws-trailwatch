@@ -58,4 +58,5 @@ module "dashboard" {
   dockerhub_password  = var.dockerhub_password
   org_account_id      = module.org_bootstrap.org_account_id
   dynamodb_key_arn    = module.org_resources.dynamodb_key_arn
+  automations         = module.org_resources.automations
 }

@@ -34,6 +34,10 @@ resource "aws_ecs_task_definition" "main" {
       {
         name  = "STATIC_FILES_DOMAIN"
         value = aws_cloudfront_distribution.static_files.domain_name
+      },
+      {
+        name  = "AUTOMATIONS"
+        value = "${jsonencode(var.automations)}"
       }
     ]
     logConfiguration = {
