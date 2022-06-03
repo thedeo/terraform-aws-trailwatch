@@ -47,7 +47,7 @@ variable "dockerhub_password" {
 variable "dashboard_report_frequency" {
   type = string
   description = "How often to run the built in reports [account, ami, securitygroup, user]."
-  default     = "cron(0 * * * ? *)"
+  default     = "cron(0 0 * * ? *)"
 }
 
 
